@@ -30,17 +30,15 @@ const WheelModel: React.FC = () => {
     ? 0.050
     : (input.isDiscBrake ? 0.071 : 0.065);
 
-  // Exact naked freehub body length (sprocket mounting zone on Rear hub)
-  const freehubLength = isFront
-    ? 0
-    : axleEndDS - dsOffset - 0.006; // extends from DS flange to axle end cap
-
-  const freehubZ = isFront
-    ? 0
-    : dsOffset + freehubLength / 2 + 0.001; // centered perfectly in the gap
-
-  const rimRadius = 0.31; // 700c equivalent radius (31cm)
-  const rimWidth = 0.016;
+  // Dynamic Rim Radius (ERD / Spoke Nipple Bed radius) based on selected Rim Preset's depth (height)
+  // Standard 700c tire bed outer radius is 311mm (0.311m). Nipple bed radius is 311mm - depth + 2mm.
+  const rimRadius = (311 - rimPreset.depth + 2) / 1000; // e.g. 24mm depth -> 0.289m, 50mm depth -> 0.263m
+  
+  // Dynamic Rim Visual geometry metrics:
+  // We keep the outer edge at a constant standard 700c size (0.311m), and expand the rim thickness (height) inward
+  const rimOuterRadius = 0.311;
+  const torusRadius = (rimOuterRadius + rimRadius) / 2; // Center radius of the rim torus
+  const rimVisualDepth = (rimOuterRadius - rimRadius) / 2; // Tube radius representing the rim height (depth)
 
   // 1. Calculate static rim outline points (perfect circle for CAD aesthetics, removing visual deformations as requested)
   const rimPoints = useMemo(() => {
@@ -344,37 +342,38 @@ const WheelModel: React.FC = () => {
       {/* MAIN WHEEL ASSEMBLY (HIGH FIDELITY ANATOMICAL HUB CODES) */}
       {/* ──────────────────────────────────────────────────────────────── */}
       <group ref={wheelGroupRef}>
-        {/* Hub Axle Cylinder (connecting left and right sides) */}
+        {/* Hub Axle Cylinder (connecting left and right axle ends, matching strict O.L.D. dimensions) */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.012, 0.012, dsOffset + ndsOffset + 0.02, 16]} />
-          <meshStandardMaterial color="#cbd5e0" metalness={0.9} roughness={0.1} />
+          <cylinderGeometry args={[0.010, 0.010, axleEndDS + axleEndNds, 32]} />
+          <meshStandardMaterial color="#a1a1aa" metalness={0.95} roughness={0.08} /> {/* Polished steel spindle shaft */}
         </mesh>
 
-        {/* Axle End Caps (Chrome detailed end stops) */}
+        {/* Axle End Caps (Chrome detailed end stops matching 100mm front / 130mm rim rear / 142mm disc rear OLD) */}
         <mesh position={[0, 0, axleEndDS]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.004, 16]} />
-          <meshStandardMaterial color="#cbd5e0" metalness={0.95} roughness={0.05} />
+          <cylinderGeometry args={[0.018, 0.018, 0.004, 32]} />
+          <meshStandardMaterial color="#f4f4f5" metalness={0.98} roughness={0.05} />
         </mesh>
         <mesh position={[0, 0, -axleEndNds]} rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.018, 0.018, 0.004, 16]} />
-          <meshStandardMaterial color="#cbd5e0" metalness={0.95} roughness={0.05} />
+          <cylinderGeometry args={[0.018, 0.018, 0.004, 32]} />
+          <meshStandardMaterial color="#f4f4f5" metalness={0.98} roughness={0.05} />
         </mesh>
 
         {/* Central Hub Shell Hourglass Sculpt (Precisely CAD-mapped for flawless organic curves with zero gaps or steps!) */}
-        <group position={[0, 0, (dsOffset - ndsOffset) / 2]}>
-          {/* Middle uniform section (12mm sleek central spindle body) */}
-          <mesh rotation={[Math.PI / 2, 0, 0]}>
+        {/* Automatically adapts to asymmetric dsOffset and ndsOffset values with perfect continuous curves */}
+        <group position={[0, 0, 0]}>
+          {/* Middle uniform section (12mm sleek central spindle body, mapped around the asymmetric center) */}
+          <mesh position={[0, 0, (dsOffset - ndsOffset) * 0.2]} rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[0.012, 0.012, (dsOffset + ndsOffset) * 0.4, 32]} />
             <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} /> {/* Refined CNC machined titanium gray */}
           </mesh>
           {/* Left-to-Center taper (from Left flange base smoothly shrinking down to meet the 12mm center body) */}
-          <mesh position={[0, 0, -(dsOffset + ndsOffset) * 0.35]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[ndsFlangeRadius * 0.75, 0.012, (dsOffset + ndsOffset) * 0.3, 32]} />
+          <mesh position={[0, 0, -ndsOffset * 0.7]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[ndsFlangeRadius * 0.75, 0.012, ndsOffset * 0.6, 32]} />
             <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
           </mesh>
           {/* Center-to-Right taper (from 12mm center body smoothly expanding out to meet the Right flange base) */}
-          <mesh position={[0, 0, (dsOffset + ndsOffset) * 0.35]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, dsFlangeRadius * 0.75, (dsOffset + ndsOffset) * 0.3, 32]} />
+          <mesh position={[0, 0, dsOffset * 0.7]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.012, dsFlangeRadius * 0.75, dsOffset * 0.6, 32]} />
             <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
           </mesh>
         </group>
@@ -405,20 +404,20 @@ const WheelModel: React.FC = () => {
           </mesh>
         </group>
 
-        {/* DETAILED: Bare Splined Freehub Body (Anodized red cylinder, NO sprocket gears, long cassette empty space!) */}
+        {/* DETAILED: Bare Splined Freehub Body (Locking position and standard length aligned to axle end stops) */}
         {!isFront && (
-          <group position={[0, 0, freehubZ]} rotation={[Math.PI / 2, 0, 0]}>
+          <group position={[0, 0, axleEndDS - 0.004 - 0.0185]} rotation={[Math.PI / 2, 0, 0]}>
             <mesh>
-              <cylinderGeometry args={[dsFlangeRadius * 0.58, dsFlangeRadius * 0.58, freehubLength, 32]} />
+              <cylinderGeometry args={[dsFlangeRadius * 0.58, dsFlangeRadius * 0.58, 0.037, 32]} />
               <meshStandardMaterial color="#b91c1c" metalness={0.95} roughness={0.1} /> {/* Refined matte-anodized red freehub! */}
             </mesh>
-            {/* 12 spline ribs on freehub outer diameter representing cassette lock splines */}
+            {/* 12 spline ribs on freehub outer diameter representing Shimano HG cassette lock splines */}
             {Array.from({ length: 12 }).map((_, rIdx) => {
               const rAng = (rIdx / 12) * Math.PI * 2;
               const ribRadius = dsFlangeRadius * 0.58;
               return (
                 <mesh key={`rib-${rIdx}`} position={[Math.cos(rAng) * ribRadius, 0, Math.sin(rAng) * rAng]} rotation={[0, -rAng, 0]}>
-                  <boxGeometry args={[0.0012, freehubLength, 0.001]} />
+                  <boxGeometry args={[0.0012, 0.037, 0.001]} />
                   <meshStandardMaterial color="#71717a" metalness={0.95} roughness={0.08} />
                 </mesh>
               );
@@ -428,7 +427,7 @@ const WheelModel: React.FC = () => {
 
         {/* DETAILED: Shimano Center Lock Spline body on Non-Drive Side (Left) */}
         {input.isDiscBrake && (
-          <group position={[0, 0, -ndsOffset - 0.004]} rotation={[Math.PI / 2, 0, 0]}>
+          <group position={[0, 0, -axleEndNds + 0.013]} rotation={[Math.PI / 2, 0, 0]}>
             {/* Center Lock splined cylinder base */}
             <mesh>
               <cylinderGeometry args={[ndsFlangeRadius * 0.55, ndsFlangeRadius * 0.55, 0.006, 32]} />
@@ -450,7 +449,7 @@ const WheelModel: React.FC = () => {
 
         {/* MECHANICAL DETAILS: Disc Brake Rotor on Non-Drive Side (Only if disc brake is active) */}
         {input.isDiscBrake && (
-          <group position={[0, 0, -ndsOffset - 0.006]} rotation={[Math.PI / 2, 0, 0]}>
+          <group position={[0, 0, -axleEndNds + 0.011]} rotation={[Math.PI / 2, 0, 0]}>
             {/* 6-Bolt Mount / Center-lock lockring detailed cap */}
             <mesh position={[0, -0.002, 0]}>
               <cylinderGeometry args={[ndsFlangeRadius * 0.65, ndsFlangeRadius * 0.65, 0.003, 16]} />
@@ -482,9 +481,9 @@ const WheelModel: React.FC = () => {
           lineWidth={4.0} 
         />
 
-        {/* Solid Rim Mesh */}
+        {/* Solid Rim Mesh - Dynamically morphs thickness (height) depending on carbon 50mm vs shallow alu 24mm! */}
         <mesh position={[0, 0, 0]} rotation={[0, 0, 0]}>
-          <torusGeometry args={[rimRadius, rimWidth, 16, 64]} />
+          <torusGeometry args={[torusRadius, rimVisualDepth, 16, 64]} />
           <meshStandardMaterial 
             color={rimPreset.material === 'carbon' ? '#1e293b' : '#475569'} 
             roughness={rimPreset.material === 'carbon' ? 0.75 : 0.25}
@@ -494,11 +493,11 @@ const WheelModel: React.FC = () => {
           />
         </mesh>
 
-        {/* 3D TIRE (タイヤ) Mesh */}
+        {/* 3D TIRE (タイヤ) Mesh - Mounted strictly on the outer diameter (0.311m) of the rim */}
         <mesh rotation={[0, 0, 0]}>
-          <torusGeometry args={[rimRadius + 0.018, 0.014, 12, 64]} />
+          <torusGeometry args={[0.311 + 0.010, 0.011, 12, 64]} />
           <meshStandardMaterial 
-            color="#0f172a" 
+            color="#09090b" 
             roughness={0.95} 
             metalness={0.05} 
           />

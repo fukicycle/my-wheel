@@ -292,13 +292,13 @@ export const ControlPanel: React.FC = () => {
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
               <span>DS (右: ドライブ側) PCD</span>
-              <span className="text-zinc-200 font-bold">{input.dsPcdMm} mm</span>
+              <span className="text-zinc-200 font-bold">{input.dsPcdMm.toFixed(1)} mm</span>
             </div>
             <input
               type="range"
               min="30"
               max="100"
-              step="2"
+              step="0.1"
               value={input.dsPcdMm}
               onChange={(e) => updateInput('dsPcdMm', Number(e.target.value))}
               className="w-full h-1 bg-zinc-950 rounded appearance-none cursor-pointer accent-zinc-300"
@@ -309,13 +309,13 @@ export const ControlPanel: React.FC = () => {
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
               <span>NDS (左: 反ドライブ側) PCD</span>
-              <span className="text-zinc-200 font-bold">{input.ndsPcdMm} mm</span>
+              <span className="text-zinc-200 font-bold">{input.ndsPcdMm.toFixed(1)} mm</span>
             </div>
             <input
               type="range"
               min="30"
               max="100"
-              step="2"
+              step="0.1"
               value={input.ndsPcdMm}
               onChange={(e) => updateInput('ndsPcdMm', Number(e.target.value))}
               className="w-full h-1 bg-zinc-950 rounded appearance-none cursor-pointer accent-zinc-300"
@@ -331,13 +331,13 @@ export const ControlPanel: React.FC = () => {
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
               <span>DS (右: ドライブ側) オフセット</span>
-              <span className="text-zinc-200 font-bold">{input.dsOffsetMm} mm</span>
+              <span className="text-zinc-200 font-bold">{input.dsOffsetMm.toFixed(1)} mm</span>
             </div>
             <input
               type="range"
               min="15"
               max="35"
-              step="1"
+              step="0.1"
               value={input.dsOffsetMm}
               onChange={(e) => updateInput('dsOffsetMm', Number(e.target.value))}
               className="w-full h-1 bg-zinc-950 rounded appearance-none cursor-pointer accent-zinc-300"
@@ -348,13 +348,13 @@ export const ControlPanel: React.FC = () => {
           <div className="flex flex-col gap-1">
             <div className="flex justify-between text-[11px] text-zinc-400 font-mono">
               <span>NDS (左: 反ドライブ側) オフセット</span>
-              <span className="text-zinc-200 font-bold">{input.ndsOffsetMm} mm</span>
+              <span className="text-zinc-200 font-bold">{input.ndsOffsetMm.toFixed(1)} mm</span>
             </div>
             <input
               type="range"
               min="15"
               max="50"
-              step="1"
+              step="0.1"
               value={input.ndsOffsetMm}
               onChange={(e) => updateInput('ndsOffsetMm', Number(e.target.value))}
               className="w-full h-1 bg-zinc-950 rounded appearance-none cursor-pointer accent-zinc-300"

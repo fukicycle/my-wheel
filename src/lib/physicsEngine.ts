@@ -49,7 +49,9 @@ export function calculateWheelPhysics(input: SimulationInput): SimulationOutput 
   const ndsSpokeCount = is2to1 ? Math.round(spokeCount / 3) : spokeCount / 2;
 
   // 2. MATHEMATICALLY RIGOROUS 3D SPOKE LENGTH & BRACING ANGLE CALCULATIONS (JIS/ANSI)
-  const rimRadiusMm = 310; // 700c ERD equivalent radius
+  // ERD (Effective Rim Diameter) dynamically scales with rim depth (height).
+  // Standard 700c tire bed outer radius is 311mm. Spoke nipple bed radius is 311mm - rim.depth + 2mm.
+  const rimRadiusMm = 311 - rim.depth + 2;
   const rDsMm = input.dsPcdMm / 2;
   const rNdsMm = input.ndsPcdMm / 2;
 
