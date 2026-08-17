@@ -342,10 +342,10 @@ const WheelModel: React.FC = () => {
       {/* MAIN WHEEL ASSEMBLY (HIGH FIDELITY ANATOMICAL HUB CODES) */}
       {/* ──────────────────────────────────────────────────────────────── */}
       <group ref={wheelGroupRef}>
-        {/* Hub Axle Cylinder (connecting left and right axle ends, matching strict O.L.D. dimensions) */}
+        {/* Hub Axle Cylinder (Internal spindle shaft matching strict O.L.D. dimensions) */}
         <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <cylinderGeometry args={[0.010, 0.010, axleEndDS + axleEndNds, 32]} />
-          <meshStandardMaterial color="#a1a1aa" metalness={0.95} roughness={0.08} /> {/* Polished steel spindle shaft */}
+          <cylinderGeometry args={[0.008, 0.008, axleEndDS + axleEndNds - 0.002, 32]} />
+          <meshStandardMaterial color="#71717a" metalness={0.98} roughness={0.1} /> {/* Polished steel spindle shaft */}
         </mesh>
 
         {/* Axle End Caps (Chrome detailed end stops matching 100mm front / 130mm rim rear / 142mm disc rear OLD) */}
@@ -363,30 +363,30 @@ const WheelModel: React.FC = () => {
         <group position={[0, 0, 0]}>
           {/* Middle uniform section (12mm sleek central spindle body, mapped around the asymmetric center) */}
           <mesh position={[0, 0, (dsOffset - ndsOffset) * 0.2]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, 0.012, (dsOffset + ndsOffset) * 0.4, 32]} />
-            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} /> {/* Refined CNC machined titanium gray */}
+            <cylinderGeometry args={[0.013, 0.013, (dsOffset + ndsOffset) * 0.4, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.92} roughness={0.12} /> {/* Refined CNC machined titanium gray */}
           </mesh>
           {/* Left-to-Center taper (from Left flange base smoothly shrinking down to meet the 12mm center body) */}
           <mesh position={[0, 0, -ndsOffset * 0.7]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[ndsFlangeRadius * 0.75, 0.012, ndsOffset * 0.6, 32]} />
-            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
+            <cylinderGeometry args={[ndsFlangeRadius * 0.78, 0.013, ndsOffset * 0.6, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.92} roughness={0.12} />
           </mesh>
           {/* Center-to-Right taper (from 12mm center body smoothly expanding out to meet the Right flange base) */}
           <mesh position={[0, 0, dsOffset * 0.7]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, dsFlangeRadius * 0.75, dsOffset * 0.6, 32]} />
-            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
+            <cylinderGeometry args={[0.013, dsFlangeRadius * 0.78, dsOffset * 0.6, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.92} roughness={0.12} />
           </mesh>
         </group>
 
         {/* Left Flange (Non-Drive Side) with dark PCD drilling groove */}
         <group position={[0, 0, -ndsOffset]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[ndsFlangeRadius, ndsFlangeRadius, 0.006, 32]} />
-            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
+            <cylinderGeometry args={[ndsFlangeRadius, ndsFlangeRadius, 0.0035, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.92} roughness={0.12} />
           </mesh>
           {/* PCD engraving ring representing the drilling path */}
-          <mesh position={[0, 0, -0.0031]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[ndsFlangeRadius * 0.9, 0.0006, 8, 32]} />
+          <mesh position={[0, 0, -0.0018]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[ndsFlangeRadius * 0.9, 0.0005, 8, 32]} />
             <meshBasicMaterial color="#09090b" />
           </mesh>
         </group>
@@ -394,43 +394,78 @@ const WheelModel: React.FC = () => {
         {/* Right Flange (Drive Side) with dark PCD drilling groove */}
         <group position={[0, 0, dsOffset]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[dsFlangeRadius, dsFlangeRadius, 0.006, 32]} />
-            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
+            <cylinderGeometry args={[dsFlangeRadius, dsFlangeRadius, 0.0035, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.92} roughness={0.12} />
           </mesh>
           {/* PCD engraving ring */}
-          <mesh position={[0, 0, 0.0031]} rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[dsFlangeRadius * 0.9, 0.0006, 8, 32]} />
+          <mesh position={[0, 0, 0.0018]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[dsFlangeRadius * 0.9, 0.0005, 8, 32]} />
             <meshBasicMaterial color="#09090b" />
           </mesh>
         </group>
 
-        {/* DETAILED: Bare Splined Freehub Body (Locking position and standard length aligned to axle end stops) */}
+        {/* REAR ONLY SPECIFIC: Freehub Body, Dust Seals, and Right Axle locknut */}
         {!isFront && (
-          <group position={[0, 0, axleEndDS - 0.004 - 0.0185]} rotation={[Math.PI / 2, 0, 0]}>
-            <mesh>
-              <cylinderGeometry args={[dsFlangeRadius * 0.58, dsFlangeRadius * 0.58, 0.037, 32]} />
-              <meshStandardMaterial color="#b91c1c" metalness={0.95} roughness={0.1} /> {/* Refined matte-anodized red freehub! */}
+          <group>
+            {/* Freehub dust seal / base collar (bridges the right flange to the red freehub body with zero gaps!) */}
+            <mesh position={[0, 0, dsOffset + 0.002]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[dsFlangeRadius * 0.58, dsFlangeRadius * 0.58, 0.004, 32]} />
+              <meshStandardMaterial color="#18181b" metalness={0.3} roughness={0.8} /> {/* Dark rubberized lock ring dust seal */}
             </mesh>
-            {/* 12 spline ribs on freehub outer diameter representing Shimano HG cassette lock splines */}
-            {Array.from({ length: 12 }).map((_, rIdx) => {
-              const rAng = (rIdx / 12) * Math.PI * 2;
-              const ribRadius = dsFlangeRadius * 0.58;
+
+            {/* DETAILED: Bare Splined Freehub Body (Locking position and standard length aligned to right flange) */}
+            <group position={[0, 0, dsOffset + 0.004 + 0.0185]} rotation={[Math.PI / 2, 0, 0]}>
+              <mesh>
+                <cylinderGeometry args={[dsFlangeRadius * 0.58, dsFlangeRadius * 0.58, 0.037, 32]} />
+                <meshStandardMaterial color="#b91c1c" metalness={0.95} roughness={0.1} /> {/* Refined matte-anodized red freehub! */}
+              </mesh>
+              {/* 12 spline ribs on freehub outer diameter representing Shimano HG cassette lock splines */}
+              {Array.from({ length: 12 }).map((_, rIdx) => {
+                const rAng = (rIdx / 12) * Math.PI * 2;
+                const ribRadius = dsFlangeRadius * 0.58;
+                return (
+                  <mesh key={`rib-${rIdx}`} position={[Math.cos(rAng) * ribRadius, 0, Math.sin(rAng) * rAng]} rotation={[0, -rAng, 0]}>
+                    <boxGeometry args={[0.0012, 0.037, 0.001]} />
+                    <meshStandardMaterial color="#71717a" metalness={0.95} roughness={0.08} />
+                  </mesh>
+                );
+              })}
+            </group>
+
+            {/* Right End Axle Locknut (Dynamically fills the gap between freehub body and right dropout) */}
+            {(() => {
+              const freehubRightEnd = dsOffset + 0.004 + 0.037;
+              const locknutLength = Math.max(0.003, axleEndDS - freehubRightEnd);
+              const locknutZ = freehubRightEnd + locknutLength / 2;
               return (
-                <mesh key={`rib-${rIdx}`} position={[Math.cos(rAng) * ribRadius, 0, Math.sin(rAng) * rAng]} rotation={[0, -rAng, 0]}>
-                  <boxGeometry args={[0.0012, 0.037, 0.001]} />
-                  <meshStandardMaterial color="#71717a" metalness={0.95} roughness={0.08} />
+                <mesh position={[0, 0, locknutZ]} rotation={[Math.PI / 2, 0, 0]}>
+                  <cylinderGeometry args={[0.015, 0.015, locknutLength, 32]} />
+                  <meshStandardMaterial color="#d4d4d8" metalness={0.98} roughness={0.06} /> {/* Chrome locknut end cap */}
                 </mesh>
               );
-            })}
+            })()}
           </group>
         )}
 
+        {/* LEFT SIDE DETAILS: Left axle locknut (Fills the gap between NDS flange/rotor and left dropout) */}
+        {(() => {
+          const leftAttachmentZ = -ndsOffset - (input.isDiscBrake ? 0.014 : 0.004);
+          const leftLocknutLength = Math.max(0.003, axleEndNds + leftAttachmentZ);
+          const leftLocknutZ = leftAttachmentZ - leftLocknutLength / 2;
+          return (
+            <mesh position={[0, 0, leftLocknutZ]} rotation={[Math.PI / 2, 0, 0]}>
+              <cylinderGeometry args={[0.016, 0.016, leftLocknutLength, 32]} />
+              <meshStandardMaterial color={input.isDiscBrake ? "#27272a" : "#d4d4d8"} metalness={0.95} roughness={0.1} />
+            </mesh>
+          );
+        })()}
+
         {/* DETAILED: Shimano Center Lock Spline body on Non-Drive Side (Left) */}
         {input.isDiscBrake && (
-          <group position={[0, 0, -axleEndNds + 0.013]} rotation={[Math.PI / 2, 0, 0]}>
+          <group position={[0, 0, -ndsOffset - 0.008]} rotation={[Math.PI / 2, 0, 0]}>
             {/* Center Lock splined cylinder base */}
             <mesh>
-              <cylinderGeometry args={[ndsFlangeRadius * 0.55, ndsFlangeRadius * 0.55, 0.006, 32]} />
+              <cylinderGeometry args={[ndsFlangeRadius * 0.55, ndsFlangeRadius * 0.55, 0.008, 32]} />
               <meshStandardMaterial color="#52525b" metalness={0.9} roughness={0.15} />
             </mesh>
             {/* Spline ridges */}
@@ -439,7 +474,7 @@ const WheelModel: React.FC = () => {
               const clRad = ndsFlangeRadius * 0.55;
               return (
                 <mesh key={`cl-${clIdx}`} position={[Math.cos(clAng) * clRad, 0, Math.sin(clAng) * clRad]} rotation={[0, -clAng, 0]}>
-                  <boxGeometry args={[0.0008, 0.006, 0.0008]} />
+                  <boxGeometry args={[0.0008, 0.008, 0.0008]} />
                   <meshStandardMaterial color="#71717a" metalness={0.95} roughness={0.05} />
                 </mesh>
               );
@@ -449,9 +484,9 @@ const WheelModel: React.FC = () => {
 
         {/* MECHANICAL DETAILS: Disc Brake Rotor on Non-Drive Side (Only if disc brake is active) */}
         {input.isDiscBrake && (
-          <group position={[0, 0, -axleEndNds + 0.011]} rotation={[Math.PI / 2, 0, 0]}>
+          <group position={[0, 0, -ndsOffset - 0.012]} rotation={[Math.PI / 2, 0, 0]}>
             {/* 6-Bolt Mount / Center-lock lockring detailed cap */}
-            <mesh position={[0, -0.002, 0]}>
+            <mesh position={[0, -0.0015, 0]}>
               <cylinderGeometry args={[ndsFlangeRadius * 0.65, ndsFlangeRadius * 0.65, 0.003, 16]} />
               <meshStandardMaterial color="#3f3f46" metalness={0.85} roughness={0.2} />
             </mesh>
