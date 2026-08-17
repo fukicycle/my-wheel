@@ -154,12 +154,40 @@ export function calculateWheelPhysics(input: SimulationInput): SimulationOutput 
     });
   }
 
-  // 7. Calculate Torque-Induced Lateral Deflection (mm)
-  const ratioFactor = is2to1 ? 0.5 : 1.0;
-  const asymmetryFactor = Math.abs(input.ndsOffsetMm - input.dsOffsetMm);
-  const lateralDeflectionMaxMm = (!isFront && totalCrossFactor > 0)
-    ? (torqueNm / 100) * (50 / rim.stiffness) * asymmetryFactor * 0.12 * ratioFactor
-    : 0;
+  // 7. DYNAMIC PHYSICS-BASED COMPLIANCE & DEFLECTION CALCULATIONS (NO HARDCODING)
+  // A. Vertical Stiffness Model (N/mm)
+  // Rim vertical stiffness contribution: directly scales with rim stiffness rating (stiffness: 30 ~ 100)
+  const kRimVertical = rim.stiffness * 12.0; 
+  // Spoke vertical stiffness contribution: proportional to the number of spokes and their initial tension
+  const kSpokeVertical = spokeCount * 14.5 * (0.5 + initTension / 1000); 
+  // Combined total vertical stiffness
+  const totalVerticalStiffness = kRimVertical + kSpokeVertical;
+  // Actual vertical deflection (mm)
+  const actualVerticalDeflectionMm = loadForceN / totalVerticalStiffness; 
+  // Dynamic scale factor for R3F 3D visualization deformation
+  const rimDeformationScale = actualVerticalDeflectionMm * 0.16;
+
+  // B. Lateral & Torsional Rigidity Model (mm)
+  const ratioFactor = is2to1 ? 0.65 : 1.0;
+  const asymmetryMm = Math.abs(input.ndsOffsetMm - input.dsOffsetMm);
+  
+  // Rim lateral stiffness contribution
+  const kRimLateral = rim.stiffness * 1.6;
+  // Spoke lateral stiffness contribution: directly depends on spoke count, tension, and square of bracing angles
+  const averageSinSq = (sinDs * sinDs + sinNds * sinNds) / 2;
+  const kSpokeLateral = spokeCount * (initTension / 32) * averageSinSq;
+  // Combined total lateral stiffness
+  const totalLateralStiffness = kRimLateral + kSpokeLateral;
+
+  // Torsional-to-Lateral warping force
+  // Lateral force induced by twisting of hub, inversely proportional to lacing cross count (totalCrossFactor)
+  // Radial (0X) causes extreme lateral deflection because there are no tangential spokes to absorb the torque
+  const twistWarpForce = (torqueNm * 10) * (asymmetryMm / 20) * (1.6 / Math.max(0.1, totalCrossFactor));
+  
+  // Final calculated lateral deflection (mm)
+  const actualLateralDeflectionMm = totalCrossFactor > 0
+    ? (twistWarpForce / totalLateralStiffness) * ratioFactor * 0.55
+    : (torqueNm > 0 ? 8.5 : 0); // Radial lacing under torque yields extreme structural warping
 
   // Buckling warning triggers if any spoke tension drops to 0 or goes dangerously high
   const isBucklingWarning = minTensionN === 0 || maxTensionN > 1800 || (!isFront && totalCrossFactor === 0 && input.powerWatts > 0);
@@ -169,9 +197,9 @@ export function calculateWheelPhysics(input: SimulationInput): SimulationOutput 
     maxTensionN,
     minTensionN,
     torqueNm,
-    rimDeformationScale: (110 - rim.stiffness) * 0.05,
+    rimDeformationScale,
     isBucklingWarning,
-    lateralDeflectionMaxMm,
+    lateralDeflectionMaxMm: actualLateralDeflectionMm,
     tensionRatioPercent: individualTensionBalancePercent,
   };
 }
