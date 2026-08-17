@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 export default defineConfig({
-  base: './', // Relative base path to ensure relative asset loading on GitHub Pages
+  base: '/my-wheel/', // Set to repository name for GitHub Pages explicit path resolution
   plugins: [react()],
   resolve: {
     alias: {

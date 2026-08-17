@@ -1,358 +1,127 @@
-自転車ホイール物理シミュレーター アプリケーション詳細設計書
-1. プロジェクト概要
-1.1 目的
-本アプリケーションは、自転車ホイールにおけるスポーク組み・素材・ハイトの違いが、静的荷重（ライダーの体重）および動的トルク（スプリント時のペダリングパワー：最大1400W）にどのように影響するかを3D上でリアルタイムに可視化・シミュレーションするWebアプリケーションである。
-厳密な有限要素法（FEM）による重い計算ではなく、**「リアルタイム性と直感的な理解（60fpsのインタラクティブ体験）」**を最優先とし、プリセットベースの構造力学近似モデルを採用する。
-1.2 主要機能
-リム・ハブ・スポークの3D描画機能: Three.js (React Three Fiber) によるリアルタイム3Dホイール表示。
-プリセット選択機能: カーボン (24mm / 38mm / 50mm)、アルミ (24mm / 30mm) のプリセット切替。
-インタラクティブな荷重・トルク制御:  
-ライダー重量スライダー（0 kg 〜 120 kg）
-ペダリングトルクスライダー（0 W 〜 1400 W）
-ケイデンス設定（60 rpm 〜 130 rpm）
-リアルタイム視覚効果 (Visual Effects):  
-張力ヒートマップ: スポークの張力変化（増大・減少）を動的なカラーグラデーションで表現。
-デフォルメ変形: 微小なリムの歪みやトルクによる「よじれ」を誇張描画（10倍〜50倍）。
-ベクトルアロー演出: ハブの回転トルクおよびタイヤ接地面の駆動力を矢印オブジェクトで立体表示。
-リアルタイムテレメトリ表示: 各スポークの最小/最大張力、歪み量、座屈危険度のグラフ/数値インジケーター表示。
+# 自転車ホイール物理シミュレーター & 3D CAD（Version 1.0）
 
-2. システムアーキテクチャ & 技術スタック
-2.1 技術スタック
-レイヤー
-採用技術
-選定理由
-フロントエンド
-React 18 / TypeScript
-状態管理の明確化および型安全性の確保
-3Dグラフィックス
-Three.js / React Three Fiber (R3F) / @react-three/drei
-Reactの状態（State）と3Dシーンの宣言的同期
-スタイル・UI components
-Tailwind CSS / Lucide React / shadcn/ui
-高速かつ洗練されたコントロールパネルUI構築
-状態管理
-Zustand
-60fpsのアニメーションループ内での軽量かつ高速な状態伝播
-チャート・数値描画
-Recharts
-スポーク張力分布グラフの描画
-2.2 システムデータフロー
-[ UI Control Panel ] (スライダー / プリセット選択)
-        │
-        ▼ (Zustand Store)
-[ Physics Simulation Engine ] (毎フレームまたはState更新時に計算)
-        │
-        ├──> [ Tension & Deformation Data ]
-        │
-        ▼ (R3F Render Loop)
-[ Three.js Canvas Scene ]
-   ├── Wheel Rim Mesh (変形Vertexアニメーション)
-   ├── Spoke Line/Cylinder Instanced Mesh (色/太さ更新)
-   └── Vector Arrow Helpers (トルク・荷重矢印)
+## 1. プロジェクト概要
 
-3. 物理演算 ＆ パラメータモデル
-3.1 リムプリセット仕様
-リムの剛性（Stiffness Index）は、静的荷重を受けた際の「変形領域の広さ（荷重分散度）」および動的トルクを受けた際の「回転方向のよじれ抵抗」に直接影響する。
-プリセットID
-名称
-リムハイト
-素材
-剛性指数 ()
-質量
-特徴
-carbon_50
-Carbon 50mm
-50 mm
-カーボン
-100
-450 g
-変形しにくくトルク伝達性が極めて高い。荷重が広く分散。
-carbon_38
-Carbon 38mm
-38 mm
-カーボン
-80
-400 g
-万能型の高剛性リム。
-carbon_24
-Carbon 24mm
-24 mm
-カーボン
-60
-350 g
-超軽量ローハイト。ややたわみやすい。
-alu_30
-Aluminum 30mm
-30 mm
-アルミ
-50
-500 g
-アルミの中では高剛性だがカーボンには及ばない。
-alu_24
-Aluminum 24mm
-24 mm
-アルミ
-30
-420 g
-変形しやすく、荷重直下のスポークテンションが大きく低下。
+本アプリケーションは、自転車ホイールにおけるスポーク組み（Lacing）・素材・ハイト・左右非対称ハブ寸法（PCD/オフセット）が、静的荷重（ライダーの体重）および動的トルクにどのように影響するかを、3D上でリアルタイムに可視化・設計・シミュレーションする**「手組みホイール用 3D CAD & 物理シミュレーター」**である。
 
-3.2 物理計算ロジック
-1. 初期条件
-スポーク本数  （リアホイール標準）
-初期スポーク張力 
-クロス組み設定: ドライブ側 3クロス / 反ドライブ側 2クロス（または交互Leading/Trailing配置）
-2. 静的荷重（ライダー重量）の影響
-地面接地面（、最下部）における荷重  による各スポーク  （角度 ）の張力変化 :
+手組みホイールビルダーが実務で設計を検証できるレベルの**幾何学的・物理的整合性（余弦定理による3Dスポーク実寸算出と左右張力平衡計算）**と、洗練された**製図CAD風のホログラフィック可視化**を60fpsのインタラクティブ環境で実現している。
 
-効果:  が低い（アルミ24mmなど）ほど、局所的（最下部直近の1〜2本）に極端な張力低下（たわみ）が発生する。
-3. 1400W スプリントトルクの影響
-ペダリングパワー  (W) とケイデンス  (rad/s) から入力トルク  (N·m) を算出：
+---
 
-例: 
-各スポークの配置方向（Leading: 駆動を牽引 / Trailing: 後追い）に応じてトルク効果  が付加される：
+## 2. 主要機能（Version 1.0 実装済み仕様）
 
-ここで、
- （Leading スポーク: 引っ張り張力が増大）
- （Trailing スポーク: 弛緩方向に作用）
-: ハブフランジ半径・交差角に依存する変換定数
-4. 最終張力の算出
-各スポーク  の最終張力 :
+### 2.1 3D ビューポート・ビジュアライザー（Studio CAD）
+*   **360°全球旋回カメラ**: マウスドラッグで真上、真前（エッジオン）、斜めなどあらゆる角度からホイール構造とよじれを観察可能。
+*   **Studio Charcoal（#cbd5e1）背景**: 眩しさを抑えたクレイスタジオ風の背景と高コントラストな暗色グリッド（JIS図面調）を採用し、応力で発光するスポーク（赤・緑・青等）の可視性を極大化。
+*   **解剖学的に忠実な削り出しハブモデル**:
+    *   CNC旋盤加工を模したテーパー状の**砂時計型（Hourglass）ハブシェル**。
+    *   左右フランジにスポークが差し込まれる**極小のスポーク通し穴（Drill Holes）**を物理的に穴あけ。
+    *   **Shimano HG規格フリーボディ**: 右側に長い12本のスプライン縦溝が刻まれた、赤いアルマイト仕上げのロングフリーボディをむき出しで再現（スプロケットは手組み作業時の状態に準じて非表示化）。
+    *   **センターロック・マウント**: 左側にギザギザしたディスクローター固定用のスプラインを再現。
+*   **JIS図面規格・ホログラフィックCAD寸法線**:
+    *   ハブのど真ん中の重なりを避け、製図法に則り**外側へ「寸法補助線（Extension Lines）」を引き出して寸法線を投影**。
+    *   **おちょこ幅（Cyan）**: センターライン（Z=0）から左右へのオフセット幅（`L_Offset`, `R_Offset`）を動的寸法矢印と高コントラストネオンラベルで表示。
+    *   **フランジ穴径（Sky Blue）**: 左右独立したPCD円（`L_PCD`, `R_PCD`）を破線円ガイドとリーダー線ラベルで表示。
+    *   **張力バランスゲージ**: 左右のテンション比率を3Dフローティングメーターでリアルタイム表示。
+*   **力学ベクトルアロー演出**:
+    *   ハブの中心に掛かる「ライダー重量（赤矢印：LOAD）」
+    *   接地面から押し上げる「路面反力（水色矢印：GRF）」
+    *   ハブをねじる「ペダリングトルク（橙色アーク：TORQUE）」
+    *   地面を蹴る「駆動力推進ベクトル（緑矢印：TRACTION）」
+*   **物理的デフォルメアニメーション**:
+    *   接地最下部のリムの平坦化（縦つぶれ）を誇張描画。
+    *   おちょこ非対称性に起因する、高トルク時の**「駆動横よれ（Z軸方向へのS字型たわみ）」**を35倍に誇張して再現。真前や真上から見下ろすとホイールがグニャリと横に波打つ様子が鮮明に確認可能。
 
-※ スポークは「引っ張り」のみに抗するプレストレスト構造のため、物理的に 0 N 未満にはならない（完全ゆるみ状態）。
+### 2.2 物理計算コアエンジン（physicsEngine.ts）
+*   **余弦定理（Law of Cosines）による3Dスポーク長さ算出**:
+    ハブPCD（$r$）、リムERD（$R=310\text{mm}$）、左右オフセット、および交差組み角（$\phi$）から、スポークの3D空間における厳密な実寸長さ（$L$）を算出。
+    $$L_{\text{spoke}} = \sqrt{R_{\text{rim}}^2 + r_{\text{flange}}^2 - 2 R_{\text{rim}} r_{\text{flange}} \cos(\phi_{\text{cross}}) + \text{Offset}^2}$$
+*   **厳密な実効支え角（オチョア角）と張力釣り合い比**:
+    スポークの長さ $L$ から実効支え角 $\sin(\gamma) = \frac{\text{Offset}}{L}$ を算出し、リム上の左右の横力の釣り合い（平衡）から、**おちょこ幅だけでなく「左右のクロス数（長さ）」の変化も完全に反映した、数学的に100%連動する張力バランス比（%）を導出**。
+*   **手組み等間隔ドリル規格（EQUAL DRILL）**:
+    1:1でも2:1でも、リムのスポーク穴および左右のハブフランジ穴は**寸分違わず完璧な等間隔**に配置され、スポークが綺麗にX字に重なり合って「時計回り（Leading）」と「反時計回り（Trailing）」に引っ張り合う双方向交差を再現。
+*   **2:1 Triplet（左右本数比2:1）lacingによる張力等価**:
+    左（NDS）の本数がDSのちょうど半分になるため、左側1本あたりの張力が自動的に2倍になり、左右の個別スポーク張力比がほぼ100%（完全等価）に並ぶ物理挙動を証明。
 
-4. 3D可視化 & UI/UX 設計
-4.1 カラーマッピング (張力ヒートマップ)
-各スポークの色  は、現在の張力  に応じて以下のように動的に補間・変化させる。
-  0 N (座屈/弛緩)      800 N               1100 N (初期)       1500 N+ (過荷重)
-   [ 青: Blue ] ────── [ 水色: Cyan ] ────── [ 緑: Green ] ────── [ 赤: Red ]
-青 (#3B82F6): 危険（張力が完全または大幅に抜けている）。リムの振れや折れの原因。
-緑 (#22C55E): 正常・安全範囲。
-赤 (#EF4444): 1400Wなどのトルクによりスポークが過度に引っぱられている状態（レッドゾーン）。
+### 2.3 UI & コントロールパネル（ControlPanel.tsx）
+*   **フロント（Front）/ リア（Rear）ハブ切り替え**:
+    *   フロント選択時はカセットフリーが消え、完全対称のフロントハブに変形。駆動力（パワー）スライダーは自動でグレーアウト・ロック。
+    *   リア選択時はむき出しの赤いフリーハブボディ、ディスクローター、駆動力伝達、2:1組みシステムがアクティブ化。
+*   **一括適用ハブ規格プリセット**:
+    ワンタップで「フロントリム」「フロントディスク」「リアリム」「リアディスク」の実在の寸法（PCD/幅）を一括適用。
+*   **5カラム・グリッドコントロール**:
+    *   スポーク本数（`20H` / `24H` / `28H` / `32H` / `36H`）の拡張。
+    *   クロス組数（`Radial (0X)` / `1X` / `2X` / `3X` / `4X`）の拡張。
 
-4.2 変形アニメーションの演出（デフォルメ）
-実際のホイールの歪み量は数ミリ（0.1mm〜2mm）程度で画面上では判別が難しいため、**ビジュアル誇張倍率（Deformation Scale: 20x 〜 50x）**を乗算して表現する。
-ラジアル方向変形 (接地面の潰れ): 最下部（）付近のリム頂点座標を、荷重に比例してハブの中心方向へ押し込む。
-ねじり変形 (Torque Twist): 1400Wトルク印加時、ハブに対してリム全体を円周方向に数度回転（よじれ）させ、剛性が低いリム（アルミ24mm）ほどよじれ角を大きく描画する。
+### 2.4 テレメトリ ＆ グラフ解析（AnalyticsPanel.tsx）
+*   **6カード・デジタルHUD**: Max/Min張力、左右張力比（%）、入力トルク、駆動横たわみ（mm）、接地縦つぶれ（mm）を一覧表示。
+*   **Rechartsスポーク分布グラフ**: 全スポークの個別張力値を棒グラフ化。張力ステータス（完全弛緩・正常・過荷重）に応じたカラー（青、水、緑、橙、赤）で個別セルを動的マッピング。
+*   **Scroll-Safe & Mobile Friendly**: 小さな画面で要素が消えないよう、自動折りたたみフレックスレイアウトと、パネル内独立スクロールを統合。
 
-4.3 UIレイアウト構造
-画面は「3D viewportメイン」＋「左側コントロールパネル」＋「右側/下部リアルタイムアナリティクス」の3エリアで構成する。
-+-----------------------------------------------------------------------+
-| Header: 自転車ホイール物理シミュレーター (Three.js Visualizer)         |
-+--------------------------+--------------------------------------------+
-| [ Control Panel ]        | [ 3D Viewport (React Three Fiber) ]        |
-|                          |                                            |
-| ■ リムプリセット選択     |    - 3D Wheel Interactive Model           |
-|   ( ) Carbon 50mm        |    - Tension Heatmap Color                |
-|   (*) Carbon 38mm        |    - Torque Vector Arrows (Orange/Red)     |
-|   ( ) Alu 24mm etc.      |    - Realtime Load Indicators             |
-|                          |                                            |
-| ■ パラメータ制御         +--------------------------------------------+
-|  ・ライダー体重 (kg)     | [ Realtime Analytics ]                     |
-|    [===|-------] 70kg    |  - Spoke Tension Distribution Chart        |
-|  ・ペダリングパワー (W)  |  - Max Tension: 1420 N  Min Tension: 120 N   |
-|    [======|----] 1400W   |  - Rim Torsional Stiffness Status: OK      |
-|  ・ケイデンス (rpm)      |                                            |
-+--------------------------+--------------------------------------------+
+---
 
-5. データ構造 & コード設計
-5.1 TypeScript 型定義 (types/wheel.ts)
-export type RimPresetId = 'carbon_50' | 'carbon_38' | 'carbon_24' | 'alu_30' | 'alu_24';
+## 3. 技術スタック
 
-export interface RimPreset {
-  id: RimPresetId;
-  name: string;
-  depth: number; // mm
-  material: 'carbon' | 'aluminum';
-  stiffness: number; // 0 - 100
-  mass: number; // grams
-}
+*   **フロントエンド**: React 18 / TypeScript
+*   **3Dグラフィックス**: Three.js / React Three Fiber (R3F) / @react-three/drei
+*   **状態管理**: Zustand (超高速フレーム更新連動)
+*   **スタイル・UI**: Tailwind CSS / Lucide React
+*   **チャート**: Recharts
+*   **自動デプロイ**: GitHub Actions (`peaceiris/actions-gh-pages@v4`)
 
-export interface SimulationInput {
-  rimPresetId: RimPresetId;
-  riderWeightKg: number; // 0 - 120
-  powerWatts: number; // 0 - 1400
-  cadenceRpm: number; // 60 - 130
-  spokeCount: number; // default: 24
-  initialTensionN: number; // default: 1100
-}
+---
 
-export interface SpokeState {
-  id: number;
-  angleRad: number;
-  isLeading: boolean;
-  isDriveSide: boolean;
-  tensionN: number;
-  colorHex: string;
-  stressRatio: number; // 0.0 - 1.0+
-}
+## 4. インストール & ローカル起動
 
-export interface SimulationOutput {
-  spokes: SpokeState[];
-  maxTensionN: number;
-  minTensionN: number;
-  torqueNm: number;
-  rimDeformationScale: number;
-  isBucklingWarning: boolean;
-}
+### 4.1 依存関係のインストール
+プロジェクトのルートディレクトリで以下を実行します：
+```bash
+npm install
+```
 
-5.2 物理計算コアエンジン (lib/physicsEngine.ts)
-import { RimPreset, SimulationInput, SimulationOutput, SpokeState } from '../types/wheel';
+### 4.2 開発サーバーの起動
+Vite高速ローカルサーバーを起動します：
+```bash
+npm run dev
+```
+ターミナルに表示される `http://localhost:5173` をブラウザで開きます。スマホのブラウザでも完全にレスポンシブに動作します。
 
-export const RIM_PRESETS: Record<string, RimPreset> = {
-  carbon_50: { id: 'carbon_50', name: 'Carbon 50mm', depth: 50, material: 'carbon', stiffness: 100, mass: 450 },
-  carbon_38: { id: 'carbon_38', name: 'Carbon 38mm', depth: 38, material: 'carbon', stiffness: 80, mass: 400 },
-  carbon_24: { id: 'carbon_24', name: 'Carbon 24mm', depth: 24, material: 'carbon', stiffness: 60, mass: 350 },
-  alu_30:    { id: 'alu_30',    name: 'Aluminum 30mm', depth: 30, material: 'aluminum', stiffness: 50, mass: 500 },
-  alu_24:    { id: 'alu_24',    name: 'Aluminum 24mm', depth: 24, material: 'aluminum', stiffness: 30, mass: 420 },
-};
+### 4.3 プロダクションビルド
+製品用にソースコードを検証・ビルドします：
+```bash
+npm run build
+```
+成果物は `dist/` ディレクトリに生成されます。
 
-export function getTensionColor(tensionN: number, initTensionN: number): string {
-  if (tensionN <= 100) return '#3B82F6'; // 青: 完全弛緩/危険
-  if (tensionN < initTensionN * 0.8) return '#06B6D4'; // 水色: 張力低下
-  if (tensionN <= initTensionN * 1.2) return '#22C55E'; // 緑: 正常
-  if (tensionN <= initTensionN * 1.5) return '#F59E0B'; // オレンジ: 高張力
-  return '#EF4444'; // 赤: 過荷重（1400W超など）
-}
+---
 
-export function calculateWheelPhysics(input: SimulationInput): SimulationOutput {
-  const rim = RIM_PRESETS[input.rimPresetId] || RIM_PRESETS.carbon_38;
-  const spokeCount = input.spokeCount;
-  const initTension = input.initialTensionN;
+## 5. 自動デプロイ構成（GitHub Pages）
 
-  // 1. トルク(Nm)計算: P / omega
-  const omega = (input.cadenceRpm * 2 * Math.PI) / 60;
-  const torqueNm = omega > 0 ? input.powerWatts / omega : 0;
+本リポジトリには、GitHub Actions による自動 CI/CD ワークフローが組み込まれています。
 
-  // 2. 重力荷重(N)
-  const loadForceN = input.riderWeightKg * 9.81 * 0.5; // リアへの荷重分（約50%）
+### 5.1 設定ファイル (`.github/workflows/deploy.yml`)
+`main` または `master` ブランチへの `git push` をトリガーに、自動的に以下を実行します：
+1.  リポジトリのチェックアウトと Node 20 環境構築。
+2.  静的 TypeScript 型チェック（`tsc --noEmit`）によるバグ検知。
+3.  Vite 本番ビルド（アセット相対パス化処理含む）。
+4.  成果物の `gh-pages` ブランチへの自動プッシュと公開。
 
-  const spokes: SpokeState[] = [];
-  let maxTensionN = 0;
-  let minTensionN = Infinity;
+### 5.2 適用上の注意
+GitHub リポジトリ設定で、**Settings > Actions > General > Workflow permissions** にて **"Read and write permissions"** が有効になっていることを確認してください。プッシュ後、自動的に `https://<USERNAME>.github.io/<REPO_NAME>/` にデプロイされ公開されます。
 
-  for (let i = 0; i < spokeCount; i++) {
-    const angleRad = (i / spokeCount) * Math.PI * 2;
-    const isLeading = i % 2 === 0;
-    const isDriveSide = i < spokeCount / 2;
+---
 
-    // A. 静的荷重による張力変化 (最下部付近 angleRad = PI で張力低下)
-    const cosTheta = Math.cos(angleRad - Math.PI / 2);
-    const staticEffect = cosTheta > 0 
-      ? cosTheta * (100 / rim.stiffness) * (loadForceN * 0.6)
-      : 0;
+## 6. 手組み設計時のおすすめ検証手順
 
-    // B. トルクによる張力変化 (Leadingは増加, Trailingは減少)
-    const directionFactor = isLeading ? 1 : -1;
-    const torqueEffect = torqueNm * directionFactor * (120 / rim.stiffness);
-
-    // C. 最終張力算出
-    const calculatedTension = initTension - staticEffect + torqueEffect;
-    const finalTension = Math.max(0, calculatedTension);
-
-    if (finalTension > maxTensionN) maxTensionN = finalTension;
-    if (finalTension < minTensionN) minTensionN = finalTension;
-
-    spokes.push({
-      id: i,
-      angleRad,
-      isLeading,
-      isDriveSide,
-      tensionN: finalTension,
-      colorHex: getTensionColor(finalTension, initTension),
-      stressRatio: finalTension / (initTension * 1.5),
-    });
-  }
-
-  const isBucklingWarning = minTensionN === 0 || maxTensionN > 1800;
-
-  return {
-    spokes,
-    maxTensionN,
-    minTensionN,
-    torqueNm,
-    rimDeformationScale: (110 - rim.stiffness) * 0.05,
-    isBucklingWarning,
-  };
-}
-
-5.3 R3F 3D描画コンポーネント仕様 (components/WheelScene.tsx)
-import React, { useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import * as THREE from 'three';
-import { SimulationOutput } from '../types/wheel';
-
-interface WheelSceneProps {
-  simulationData: SimulationOutput;
-}
-
-export const WheelScene: React.FC<WheelSceneProps> = ({ simulationData }) => {
-  const wheelGroupRef = useRef<THREE.Group>(null);
-  const hubRadius = 0.05;
-  const rimRadius = 0.31; // 700c相当の半径表現
-
-  // トルクに応じたスピン・微振動演出
-  useFrame((state, delta) => {
-    if (wheelGroupRef.current && simulationData.torqueNm > 0) {
-      // 微小なよじれ振動効果
-      const twistAmount = (simulationData.torqueNm / 2000) * simulationData.rimDeformationScale;
-      wheelGroupRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 20) * twistAmount * 0.05;
-    }
-  });
-
-  return (
-    <group ref={wheelGroupRef}>
-      {/* 1. ハブ Mesh */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[hubRadius, hubRadius, 0.07, 32]} />
-        <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.2} />
-      </mesh>
-
-      {/* 2. リム Mesh */}
-      <mesh>
-        <torusGeometry args={[rimRadius, 0.015, 16, 100]} />
-        <meshStandardMaterial color="#111111" roughness={0.4} />
-      </mesh>
-
-      {/* 3. 各スポーク Lines / Cylinders */}
-      {simulationData.spokes.map((spoke) => {
-        const hubX = Math.cos(spoke.angleRad) * hubRadius;
-        const hubY = Math.sin(spoke.angleRad) * hubRadius;
-        
-        // クロス組のズレ表現
-        const rimAngle = spoke.angleRad + (spoke.isLeading ? 0.2 : -0.2);
-        const rimX = Math.cos(rimAngle) * rimRadius;
-        const rimY = Math.sin(rimAngle) * rimRadius;
-
-        const points = [
-          new THREE.Vector3(hubX, hubY, spoke.isDriveSide ? 0.02 : -0.02),
-          new THREE.Vector3(rimX, rimY, 0),
-        ];
-
-        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-
-        return (
-          <line key={spoke.id} geometry={lineGeometry}>
-            <lineBasicMaterial color={spoke.colorHex} linewidth={2} />
-          </line>
-        );
-      })}
-
-      {/* 4. トルク可視化アロー (トルク発生時) */}
-      {simulationData.torqueNm > 10 && (
-        <mesh position={[0, 0, 0.08]} rotation={[0, 0, 0]}>
-          <ringGeometry args={[0.07, 0.09, 32, 1, 0, Math.PI * 1.5]} />
-          <meshBasicMaterial color="#FF5500" side={THREE.DoubleSide} transparent opacity={0.8} />
-        </mesh>
-      )}
-    </group>
-  );
-};
-
-6. パフォーマンス最適化 & 将来の拡張性
-6.1 パフォーマンス最適化
-InstancedMesh の利用: スポーク描画を単一の InstancedMesh に集約することで、描画コール（Draw Calls）を最小化し、モバイルブラウザでも60fpsを維持する。
-計算と描画の分離: 物理演算ロジック（calculateWheelPhysics）は計算量が極めて軽いためメインスレッドで即座に実行可能だが、パラメータ更新時のみ再計算するようメモ化（useMemo）を適用する。
-6.2 将来の拡張アプローチ
-スポーク組みパターン切り替え: ラジアル組み、2:1組み（Optbal）、4クロスなどの比較機能の追加。
-Web Worker / WASM 化: 厳密な二次元2D/3D FEM（有限要素法）エンジンを Rust / C++ から WebAssembly にビルドして組み込み、より学術的な解析モードへの拡張。
-
+1.  **リア11速（130mm幅）の手組み課題の視覚化**:
+    *   ハブ・タイプを「リアハブ」、スポーク配分を「1:1」にし、プリセット「リアリム」を適用。
+    *   右側おちょこが狭く、左が広いために、**左右張力比が51%まで崩落**し、左側スポークが青く弛緩する様子を確認。
+2.  **2:1 Tripletによる張力完全等価の証明**:
+    *   スポーク配分を「2:1 Triplet（G3風）」に切り替える。
+    *   **結果**: 左右の個別張力がほぼ **100%（完全均衡）** となり、左側スポークのグラフが安全なグリーンへと一瞬で揃う挙動を確認。
+3.  **クロス数（組み方）による張力・スポーク長さの微変動**:
+    *   左右のハブ幅やPCDを固定したまま、右のクロス数を「3X」から「Radial（0X）」へと切り替える。
+    *   **結果**: 余弦定理の計算連動により、スポーク長が最短になって支え角が立つのに伴い、**張力バランス比（%）が動的に変化する**、幾何学的な力学変化を検証。
+4.  **スプリント時の「駆動横よれ」を縦から見る**:
+    - ホイールモデルをドラッグして、真上から「一本の縦の輪っか」に見えるように調節。
+    - パワーを 1400W に上げ、アルミリムから高剛性カーボンリムに切り替えたり、1:1 から 2:1 にした時の**「リムのZ軸（横方向）へのS字型のたわみ」**の変形増減をCAD図面ライン上で観察。
