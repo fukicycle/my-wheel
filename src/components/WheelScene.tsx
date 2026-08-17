@@ -573,13 +573,13 @@ const WheelModel: React.FC = () => {
 
 export const WheelScene: React.FC = () => {
   return (
-    <div className="w-full h-full relative bg-slate-200/90 rounded-xl overflow-hidden border border-slate-350 shadow-xl">
+    <div className="w-full h-full relative bg-zinc-950 overflow-hidden">
       {/* 3D Canvas with Angled Camera Position for immediate 3D depth and soft studio background */}
       <Canvas
         camera={{ position: [0.38, 0.18, 0.72], fov: 45 }}
         gl={{ antialias: true }}
       >
-        <color attach="background" args={['#cbd5e1']} /> {/* Soft blueprint gray instead of blinding white */}
+        <color attach="background" args={['#18181b']} /> {/* Deep Studio Zinc Gray instead of bright blue-gray */}
         
         {/* Lights */}
         <ambientLight intensity={0.6} />
@@ -607,27 +607,27 @@ export const WheelScene: React.FC = () => {
             position={[0, 0, 0]} 
             args={[3, 3]} 
             cellSize={0.1} 
-            cellThickness={0.5} 
-            cellColor="#94a3b8" 
+            cellThickness={0.4} 
+            cellColor="#27272a" 
             sectionSize={0.5} 
-            sectionThickness={1.2} 
-            sectionColor="#64748b" 
+            sectionThickness={1.0} 
+            sectionColor="#3f3f46" 
             fadeDistance={1.5}
             infiniteGrid
           />
         </group>
       </Canvas>
 
-      {/* Sci-Fi Floating HUD overlay - dark semi-transparent for high contrast on light background */}
-      <div className="absolute top-4 right-4 bg-slate-900/90 border border-slate-700 p-2.5 rounded-lg text-[10px] font-mono text-slate-300 flex flex-col gap-1 pointer-events-none shadow-xl">
-        <div className="text-cyan-400 font-bold border-b border-slate-800 pb-1 mb-1 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
-          RENDER ENGINE: STUDIO PERSPECTIVE
+      {/* Sci-Fi Floating HUD overlay - refined glassmorphic styling */}
+      <div className="absolute top-4 right-4 bg-zinc-900/70 border border-zinc-800/50 p-2.5 rounded-lg text-[10px] font-mono text-zinc-300 flex flex-col gap-1 pointer-events-none shadow-xl backdrop-blur-md">
+        <div className="text-zinc-400 font-bold border-b border-zinc-800/60 pb-1 mb-1 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-ping"></span>
+          RENDER ENGINE: STUDIO GRAY PERSPECTIVE
         </div>
         <div>CAM COORDS: 360° ACTIVE</div>
         <div>LATERAL WARP: TRUE COORD</div>
         <div>LACING: 1:1 / 2:1 EQUAL DRILL</div>
-        <div className="text-slate-400 mt-1 text-[9px] italic">Drag to view 360° structure</div>
+        <div className="text-zinc-500 mt-1 text-[9px] italic">Drag to view 360° structure</div>
       </div>
     </div>
   );
