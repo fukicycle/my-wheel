@@ -42,33 +42,21 @@ const WheelModel: React.FC = () => {
   const rimRadius = 0.31; // 700c equivalent radius (31cm)
   const rimWidth = 0.016;
 
-  // 1. Calculate dynamic rim deformation points (with both Y-flattening and Z-lateral warping!)
+  // 1. Calculate static rim outline points (perfect circle for CAD aesthetics, removing visual deformations as requested)
   const rimPoints = useMemo(() => {
     const points: THREE.Vector3[] = [];
-    const segments = 100; // higher density for smooth bending curves
+    const segments = 120; // smooth circle segments
     
     for (let i = 0; i <= segments; i++) {
       const angle = (i / segments) * Math.PI * 2;
-      
-      // A. Vertical compression (たわみ) due to load at the bottom (1.5 * PI)
-      const cosTheta = Math.cos(angle - 1.5 * Math.PI);
-      const verticalDeform = cosTheta > 0
-        ? cosTheta * output.rimDeformationScale * (input.riderWeightKg / 120) * 0.04
-        : 0;
-      const currentRadius = rimRadius - verticalDeform;
-
-      // B. Lateral warping (駆動横よれ) along Z-axis under torque (multiplied by 35x for clear visibility)
-      const deformatScale = 35;
-      const lateralWarp = Math.sin(angle * 2) * (output.lateralDeflectionMaxMm / 1000) * deformatScale;
-
       points.push(new THREE.Vector3(
-        Math.cos(angle) * currentRadius,
-        Math.sin(angle) * currentRadius,
-        lateralWarp // Bending along Z-axis (sideways!)
+        Math.cos(angle) * rimRadius,
+        Math.sin(angle) * rimRadius,
+        0 // No Z-axis lateral warping deformation
       ));
     }
     return points;
-  }, [input.riderWeightKg, output.rimDeformationScale, output.lateralDeflectionMaxMm]);
+  }, []);
 
   // Generate spoke assignments to calculate perfectly even hub flange hole positions
   const spokeAssignments = useMemo(() => {
@@ -148,23 +136,10 @@ const WheelModel: React.FC = () => {
       // 2. Rim connection position (strictly evenly-spaced!)
       const rimAngle = (rimIdx / input.spokeCount) * 2 * Math.PI;
 
-      // Twist angle due to rotational torque wind-up (ねじれ)
-      const twistAngle = output.torqueNm * (isLeading ? 0.0008 : -0.0008) * (150 / rimPreset.stiffness);
-      const currentRimAngle = rimAngle + twistAngle;
-
-      // Vertical compressionたわみ
-      const cosTheta = Math.cos(currentRimAngle - 1.5 * Math.PI);
-      const verticalDeform = cosTheta > 0
-        ? cosTheta * output.rimDeformationScale * (input.riderWeightKg / 120) * 0.04
-        : 0;
-      const currentRimRadius = rimRadius - verticalDeform;
-
-      // Lateral warping駆動よれ (35x exaggerated for visual feedback)
-      const deformatScale = 35;
-      const rimZ = Math.sin(currentRimAngle * 2) * (output.lateralDeflectionMaxMm / 1000) * deformatScale;
-
-      const rimX = Math.cos(currentRimAngle) * currentRimRadius;
-      const rimY = Math.sin(currentRimAngle) * currentRimRadius;
+      // 常に完璧な正円形状を維持（変形仕様の排除）
+      const rimX = Math.cos(rimAngle) * rimRadius;
+      const rimY = Math.sin(rimAngle) * rimRadius;
+      const rimZ = 0; // 横方向の歪みなし
 
       return {
         ...spoke,
@@ -178,21 +153,15 @@ const WheelModel: React.FC = () => {
         hubAngle, // Expose for rendering individual spoke entry holes!
       };
     });
-  }, [spokeAssignments, dsFlangeRadius, ndsFlangeRadius, dsOffset, ndsOffset, input.dsCrossCount, input.ndsCrossCount, input.spokeCount, output.torqueNm, output.rimDeformationScale, output.lateralDeflectionMaxMm, input.riderWeightKg, rimPreset.stiffness]);
+  }, [spokeAssignments, dsFlangeRadius, ndsFlangeRadius, dsOffset, ndsOffset, input.dsCrossCount, input.ndsCrossCount, input.spokeCount, rimRadius]);
 
-  // Spin/vibrate the wheel based on cadence and power
+  // Spin the wheel smoothly based on cadence and pedaling power (without un-physical vibration)
   useFrame((state) => {
     if (wheelGroupRef.current) {
       const speed = 9.42; // assume default 90 RPM for constant rotation speed
       
       if (input.powerWatts > 0) {
         wheelGroupRef.current.rotation.z -= speed * state.clock.getDelta() * 0.15;
-      }
-
-      if (output.torqueNm > 0) {
-        const twistAmount = (output.torqueNm / 1000) * output.rimDeformationScale;
-        const vibration = Math.sin(state.clock.getElapsedTime() * 25) * twistAmount * 0.02;
-        wheelGroupRef.current.rotation.z += vibration;
       }
     }
   });
@@ -391,22 +360,22 @@ const WheelModel: React.FC = () => {
           <meshStandardMaterial color="#cbd5e0" metalness={0.95} roughness={0.05} />
         </mesh>
 
-        {/* Central Hub Shell Hourglass Sculpt (Composed of three sections for custom taper) */}
+        {/* Central Hub Shell Hourglass Sculpt (Precisely CAD-mapped for flawless organic curves with zero gaps or steps!) */}
         <group position={[0, 0, (dsOffset - ndsOffset) / 2]}>
-          {/* Middle narrow section */}
+          {/* Middle uniform section (12mm sleek central spindle body) */}
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.011, 0.012, (dsOffset + ndsOffset) * 0.4, 32]} />
-            <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+            <cylinderGeometry args={[0.012, 0.012, (dsOffset + ndsOffset) * 0.4, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} /> {/* Refined CNC machined titanium gray */}
           </mesh>
-          {/* Taper to Right Flange */}
-          <mesh position={[0, 0, (dsOffset + ndsOffset) * 0.3]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[dsFlangeRadius * 0.7, 0.011, (dsOffset + ndsOffset) * 0.2, 32]} />
-            <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+          {/* Left-to-Center taper (from Left flange base smoothly shrinking down to meet the 12mm center body) */}
+          <mesh position={[0, 0, -(dsOffset + ndsOffset) * 0.35]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[ndsFlangeRadius * 0.75, 0.012, (dsOffset + ndsOffset) * 0.3, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
           </mesh>
-          {/* Taper to Left Flange */}
-          <mesh position={[0, 0, -(dsOffset + ndsOffset) * 0.3]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.012, ndsFlangeRadius * 0.7, (dsOffset + ndsOffset) * 0.2, 32]} />
-            <meshStandardMaterial color="#334155" metalness={0.8} roughness={0.2} />
+          {/* Center-to-Right taper (from 12mm center body smoothly expanding out to meet the Right flange base) */}
+          <mesh position={[0, 0, (dsOffset + ndsOffset) * 0.35]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.012, dsFlangeRadius * 0.75, (dsOffset + ndsOffset) * 0.3, 32]} />
+            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
           </mesh>
         </group>
 
@@ -414,12 +383,12 @@ const WheelModel: React.FC = () => {
         <group position={[0, 0, -ndsOffset]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[ndsFlangeRadius, ndsFlangeRadius, 0.006, 32]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
+            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
           </mesh>
           {/* PCD engraving ring representing the drilling path */}
           <mesh position={[0, 0, -0.0031]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[ndsFlangeRadius * 0.9, 0.0006, 8, 32]} />
-            <meshBasicMaterial color="#020617" />
+            <meshBasicMaterial color="#09090b" />
           </mesh>
         </group>
 
@@ -427,12 +396,12 @@ const WheelModel: React.FC = () => {
         <group position={[0, 0, dsOffset]}>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
             <cylinderGeometry args={[dsFlangeRadius, dsFlangeRadius, 0.006, 32]} />
-            <meshStandardMaterial color="#1e293b" metalness={0.85} roughness={0.2} />
+            <meshStandardMaterial color="#27272a" metalness={0.9} roughness={0.15} />
           </mesh>
           {/* PCD engraving ring */}
           <mesh position={[0, 0, 0.0031]} rotation={[Math.PI / 2, 0, 0]}>
             <torusGeometry args={[dsFlangeRadius * 0.9, 0.0006, 8, 32]} />
-            <meshBasicMaterial color="#020617" />
+            <meshBasicMaterial color="#09090b" />
           </mesh>
         </group>
 
@@ -441,7 +410,7 @@ const WheelModel: React.FC = () => {
           <group position={[0, 0, freehubZ]} rotation={[Math.PI / 2, 0, 0]}>
             <mesh>
               <cylinderGeometry args={[dsFlangeRadius * 0.58, dsFlangeRadius * 0.58, freehubLength, 32]} />
-              <meshStandardMaterial color="#dc2626" metalness={0.85} roughness={0.15} /> {/* Beautiful anodized red freehub! */}
+              <meshStandardMaterial color="#b91c1c" metalness={0.95} roughness={0.1} /> {/* Refined matte-anodized red freehub! */}
             </mesh>
             {/* 12 spline ribs on freehub outer diameter representing cassette lock splines */}
             {Array.from({ length: 12 }).map((_, rIdx) => {
@@ -450,7 +419,7 @@ const WheelModel: React.FC = () => {
               return (
                 <mesh key={`rib-${rIdx}`} position={[Math.cos(rAng) * ribRadius, 0, Math.sin(rAng) * rAng]} rotation={[0, -rAng, 0]}>
                   <boxGeometry args={[0.0012, freehubLength, 0.001]} />
-                  <meshStandardMaterial color="#cbd5e0" metalness={0.9} roughness={0.1} />
+                  <meshStandardMaterial color="#71717a" metalness={0.95} roughness={0.08} />
                 </mesh>
               );
             })}
@@ -463,7 +432,7 @@ const WheelModel: React.FC = () => {
             {/* Center Lock splined cylinder base */}
             <mesh>
               <cylinderGeometry args={[ndsFlangeRadius * 0.55, ndsFlangeRadius * 0.55, 0.006, 32]} />
-              <meshStandardMaterial color="#cbd5e0" metalness={0.9} roughness={0.2} />
+              <meshStandardMaterial color="#52525b" metalness={0.9} roughness={0.15} />
             </mesh>
             {/* Spline ridges */}
             {Array.from({ length: 12 }).map((_, clIdx) => {
@@ -472,7 +441,7 @@ const WheelModel: React.FC = () => {
               return (
                 <mesh key={`cl-${clIdx}`} position={[Math.cos(clAng) * clRad, 0, Math.sin(clAng) * clRad]} rotation={[0, -clAng, 0]}>
                   <boxGeometry args={[0.0008, 0.006, 0.0008]} />
-                  <meshStandardMaterial color="#475569" metalness={0.9} roughness={0.1} />
+                  <meshStandardMaterial color="#71717a" metalness={0.95} roughness={0.05} />
                 </mesh>
               );
             })}
@@ -485,12 +454,12 @@ const WheelModel: React.FC = () => {
             {/* 6-Bolt Mount / Center-lock lockring detailed cap */}
             <mesh position={[0, -0.002, 0]}>
               <cylinderGeometry args={[ndsFlangeRadius * 0.65, ndsFlangeRadius * 0.65, 0.003, 16]} />
-              <meshStandardMaterial color="#475569" metalness={0.8} roughness={0.3} />
+              <meshStandardMaterial color="#3f3f46" metalness={0.85} roughness={0.2} />
             </mesh>
             {/* Outer polished steel rotor disc */}
             <mesh>
               <ringGeometry args={[ndsFlangeRadius * 1.1, ndsFlangeRadius * 1.5, 32]} />
-              <meshStandardMaterial color="#cbd5e0" metalness={0.95} roughness={0.1} side={THREE.DoubleSide} />
+              <meshStandardMaterial color="#d4d4d8" metalness={0.98} roughness={0.08} side={THREE.DoubleSide} />
             </mesh>
             {/* Rotor cutouts/slits for high mechanical realism! */}
             {Array.from({ length: 8 }).map((_, rIdx) => {
@@ -499,7 +468,7 @@ const WheelModel: React.FC = () => {
               return (
                 <mesh key={`rotor-slit-${rIdx}`} position={[Math.cos(rotAng) * rotRad, 0, Math.sin(rotAng) * rotRad]} rotation={[0, -rotAng, 0]}>
                   <boxGeometry args={[0.003, 0.002, 0.01]} />
-                  <meshBasicMaterial color="#cbd5e1" /> {/* blend with background to represent cutout holes! */}
+                  <meshBasicMaterial color="#18181b" />
                 </mesh>
               );
             })}

@@ -20,13 +20,13 @@ function App() {
           <WheelScene />
         </div>
 
-        {/* Floating Left Column: Glassmorphic Control Panel */}
-        <div className="absolute left-6 top-6 bottom-6 w-[340px] lg:w-[380px] bg-zinc-900/50 border border-zinc-800/50 backdrop-blur-xl rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden z-10 flex flex-col p-5">
+        {/* Floating Left Column: Glassmorphic Control Panel with enhanced transparency */}
+        <div className="absolute left-6 top-6 bottom-6 w-[340px] lg:w-[380px] bg-zinc-900/25 border border-zinc-800/35 backdrop-blur-xl rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] overflow-hidden z-10 flex flex-col p-5">
           <ControlPanel />
         </div>
 
-        {/* Floating Right Column: Glassmorphic Analytics Panel */}
-        <div className="absolute right-6 top-6 bottom-6 w-[420px] lg:w-[480px] xl:w-[520px] bg-zinc-900/50 border border-zinc-800/50 backdrop-blur-xl rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden z-10 flex flex-col">
+        {/* Floating Right Column: Glassmorphic Analytics Panel with enhanced transparency */}
+        <div className="absolute right-6 top-6 bottom-6 w-[420px] lg:w-[480px] xl:w-[520px] bg-zinc-900/25 border border-zinc-800/35 backdrop-blur-xl rounded-2xl shadow-[0_12px_40px_rgba(0,0,0,0.5)] overflow-hidden z-10 flex flex-col">
           <AnalyticsPanel />
         </div>
 
