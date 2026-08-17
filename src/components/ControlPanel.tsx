@@ -8,7 +8,7 @@ export const ControlPanel: React.FC = () => {
   const { input, updateInput, setPreset, resetToDefaults } = useWheelStore();
 
   return (
-    <div className="flex flex-col gap-6 h-auto md:h-full md:overflow-y-auto pr-2 pb-6">
+    <div className="flex flex-col gap-6 h-full overflow-y-auto pr-2 pb-6">
       {/* App Header */}
       <div>
         <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 bg-clip-text text-transparent">
