@@ -54,7 +54,7 @@ export const AnalyticsPanel: React.FC = () => {
   const health = getStabilityStatus();
 
   return (
-    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 md:p-5 backdrop-blur-md flex flex-col gap-4 h-full overflow-y-auto">
+    <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4 md:p-5 backdrop-blur-md flex flex-col gap-4 h-auto md:h-full md:overflow-y-auto">
       {/* Real-time Indicators Grid */}
       <div>
         <h2 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-2">
