@@ -27,6 +27,8 @@ export interface SimulationInput {
   ndsCrossCount: number; // 0 (radial) to 4 (default: 2)
   lacingRatio: '1:1' | '2:1'; // default: '1:1'
   isDiscBrake: boolean; // default: false (rim brake)
+  deformAmp: number; // 1 - 100 (visual magnification multiplier)
+  showDimensions: boolean; // default: true (show CAD dimensions)
 }
 
 export interface SpokeState {

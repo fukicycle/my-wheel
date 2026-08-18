@@ -26,7 +26,18 @@ const defaultInput: SimulationInput = {
   ndsCrossCount: 2,
   lacingRatio: '1:1',
   isDiscBrake: false,
+  deformAmp: 1,
+  showDimensions: true,
 };
+
+// Helper to determine the physically possible max cross count based on flange spoke count
+export function getMaxCrossCount(nSide: number): number {
+  if (nSide % 2 !== 0) return 0; // Odd count can only be laced Radially (0X)
+  if (nSide < 8) return 0;
+  if (nSide <= 10) return 2;
+  if (nSide <= 14) return 3;
+  return 4;
+}
 
 export const useWheelStore = create<WheelStore>((set) => ({
   input: { ...defaultInput },
@@ -36,7 +47,7 @@ export const useWheelStore = create<WheelStore>((set) => ({
     set((state) => {
       const newInput = { ...state.input, [key]: value };
       
-      // Auto-logic based on Hub Type switching
+      // 1. Auto-logic based on Hub Type switching
       if (key === 'hubType') {
         const type = value as 'front' | 'rear';
         if (type === 'front') {
@@ -58,7 +69,7 @@ export const useWheelStore = create<WheelStore>((set) => ({
         }
       }
 
-      // Auto adjust presets or dependencies if needed when disc is clicked
+      // 2. Auto adjust presets or dependencies if needed when disc is clicked
       if (key === 'isDiscBrake') {
         const isDisc = value as boolean;
         const isFr = newInput.hubType === 'front';
@@ -73,6 +84,27 @@ export const useWheelStore = create<WheelStore>((set) => ({
           newInput.dsOffsetMm = isDisc ? 21 : 19;
           newInput.ndsOffsetMm = isDisc ? 32 : 37;
         }
+      }
+
+      // 3. PHYSICAL VALIDATION OF LACING RATIO (2:1 requires divisible by 3)
+      const divisibleBy3 = newInput.spokeCount % 3 === 0;
+      if (newInput.lacingRatio === '2:1' && (!divisibleBy3 || newInput.hubType === 'front')) {
+        newInput.lacingRatio = '1:1';
+      }
+
+      // 4. PHYSICAL CLAMPING OF CROSS COUNTS BASED ON REAL TANGENCY LIMITS
+      const finalIs2to1 = newInput.lacingRatio === '2:1';
+      const dsSpokes = finalIs2to1 ? Math.round(newInput.spokeCount * 2 / 3) : newInput.spokeCount / 2;
+      const ndsSpokes = finalIs2to1 ? Math.round(newInput.spokeCount / 3) : newInput.spokeCount / 2;
+
+      const maxDsCross = getMaxCrossCount(dsSpokes);
+      const maxNdsCross = getMaxCrossCount(ndsSpokes);
+
+      if (newInput.dsCrossCount > maxDsCross) {
+        newInput.dsCrossCount = maxDsCross;
+      }
+      if (newInput.ndsCrossCount > maxNdsCross) {
+        newInput.ndsCrossCount = maxNdsCross;
       }
 
       return {
@@ -110,6 +142,26 @@ export const useWheelStore = create<WheelStore>((set) => ({
         dsOffsetMm: isFr ? (isDisc ? 34 : 38) : (isDisc ? 21 : 19),
         ndsOffsetMm: isFr ? (isDisc ? 22 : 38) : (isDisc ? 32 : 37),
       };
+
+      // Apply the same robust clamping to preset changes
+      const divisibleBy3 = newInput.spokeCount % 3 === 0;
+      if (newInput.lacingRatio === '2:1' && (!divisibleBy3 || newInput.hubType === 'front')) {
+        newInput.lacingRatio = '1:1';
+      }
+
+      const finalIs2to1 = newInput.lacingRatio === '2:1';
+      const dsSpokes = finalIs2to1 ? Math.round(newInput.spokeCount * 2 / 3) : newInput.spokeCount / 2;
+      const ndsSpokes = finalIs2to1 ? Math.round(newInput.spokeCount / 3) : newInput.spokeCount / 2;
+
+      const maxDsCross = getMaxCrossCount(dsSpokes);
+      const maxNdsCross = getMaxCrossCount(ndsSpokes);
+
+      if (newInput.dsCrossCount > maxDsCross) {
+        newInput.dsCrossCount = maxDsCross;
+      }
+      if (newInput.ndsCrossCount > maxNdsCross) {
+        newInput.ndsCrossCount = maxNdsCross;
+      }
 
       return {
         input: newInput,
