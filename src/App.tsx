@@ -45,7 +45,7 @@ function App() {
 
       {/* 📐 FLOATING CAD DIMENSIONS TOGGLE (Permanently visible outside panels) */}
       <div 
-        className={`absolute z-20 safe-right-pos safe-top-pos items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800
+        className={`absolute z-10 safe-right-pos safe-top-pos items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800
           ${isCollapsed ? 'flex' : 'hidden md:flex'}
         `}
       >
@@ -75,7 +75,7 @@ function App() {
       {/* CONTROL PANEL WIDGET (Left-anchored Figma-Style Sliding Dock Panel) */}
       {/* ──────────────────────────────────────────────────────────────── */}
       <div 
-        className={`absolute z-10 transition-all duration-500 ease-in-out flex flex-col overflow-hidden
+        className={`absolute z-20 transition-all duration-500 ease-in-out flex flex-col overflow-hidden
           safe-left-pos
           safe-top-pos
           ${isCollapsed 
@@ -99,7 +99,7 @@ function App() {
       {/* A. Collapsed State: Symmetrical circular button trigger (Always rendered for smooth transitions!) */}
       <button
         onClick={() => handleToggleAnalytics(false)}
-        className={`absolute z-10 safe-right-pos safe-bottom-pos w-[52px] h-[52px] rounded-2xl flex items-center justify-center bg-slate-950/80 border border-slate-900 shadow-2xl backdrop-blur-md text-cyan-400 hover:text-cyan-300 transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 ${
+        className={`absolute z-20 safe-right-pos safe-bottom-pos w-[52px] h-[52px] rounded-2xl flex items-center justify-center bg-slate-950/80 border border-slate-900 shadow-2xl backdrop-blur-md text-cyan-400 hover:text-cyan-300 transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 ${
           isAnalyticsCollapsed 
             ? 'opacity-100 scale-100 pointer-events-auto' 
             : 'opacity-0 scale-50 pointer-events-none'
@@ -111,7 +111,7 @@ function App() {
 
       {/* B. Expanded State: Right-bottom anchored floating card, height fits content (Math.min) with parent overflow limit */}
       <div 
-        className={`absolute z-10 safe-right-pos safe-bottom-pos safe-width-mobile md:w-[500px] lg:w-[540px] safe-height-mobile md:safe-height-desktop flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
+        className={`absolute z-20 safe-right-pos safe-bottom-pos safe-width-mobile md:w-[500px] lg:w-[540px] safe-height-mobile md:safe-height-desktop flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
           !isAnalyticsCollapsed 
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' 
             : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
