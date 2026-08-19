@@ -45,7 +45,7 @@ function App() {
 
       {/* 📐 FLOATING CAD DIMENSIONS TOGGLE (Permanently visible outside panels) */}
       <div 
-        className={`absolute z-20 right-[calc(1rem+var(--safe-right))] top-[calc(1rem+var(--safe-top))] items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800
+        className={`absolute z-20 safe-right-pos safe-top-pos items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800
           ${isCollapsed ? 'flex' : 'hidden md:flex'}
         `}
       >
@@ -76,11 +76,11 @@ function App() {
       {/* ──────────────────────────────────────────────────────────────── */}
       <div 
         className={`absolute z-10 transition-all duration-500 ease-in-out flex flex-col overflow-hidden
-          left-[calc(1rem+var(--safe-left))]
-          top-[calc(1rem+var(--safe-top))]
+          safe-left-pos
+          safe-top-pos
           ${isCollapsed 
-            ? 'w-[52px] h-[52px] max-h-[52px] md:h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-32px)] md:max-h-none md:w-[64px]' 
-            : 'w-[calc(100vw-var(--safe-left)-var(--safe-right)-32px)] h-fit max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-32px)] md:w-[350px] lg:w-[390px] md:h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-32px)] md:max-h-none'
+            ? 'w-[52px] h-[52px] max-h-[52px] md:safe-height-desktop md:max-h-none md:w-[64px]' 
+            : 'safe-width-mobile safe-height-mobile md:w-[350px] lg:w-[390px] md:safe-height-desktop md:max-h-none'
           }
         `}
       >
@@ -99,7 +99,7 @@ function App() {
       {/* A. Collapsed State: Symmetrical circular button trigger (Always rendered for smooth transitions!) */}
       <button
         onClick={() => handleToggleAnalytics(false)}
-        className={`absolute z-10 right-[calc(1rem+var(--safe-right))] bottom-[calc(1rem+var(--safe-bottom))] w-[52px] h-[52px] rounded-2xl flex items-center justify-center bg-slate-950/80 border border-slate-900 shadow-2xl backdrop-blur-md text-cyan-400 hover:text-cyan-300 transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 ${
+        className={`absolute z-10 safe-right-pos safe-bottom-pos w-[52px] h-[52px] rounded-2xl flex items-center justify-center bg-slate-950/80 border border-slate-900 shadow-2xl backdrop-blur-md text-cyan-400 hover:text-cyan-300 transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 ${
           isAnalyticsCollapsed 
             ? 'opacity-100 scale-100 pointer-events-auto' 
             : 'opacity-0 scale-50 pointer-events-none'
@@ -111,7 +111,7 @@ function App() {
 
       {/* B. Expanded State: Right-bottom anchored floating card, height fits content (Math.min) with parent overflow limit */}
       <div 
-        className={`absolute z-10 right-[calc(1rem+var(--safe-right))] bottom-[calc(1rem+var(--safe-bottom))] w-[calc(100vw-var(--safe-left)-var(--safe-right)-32px)] md:w-[500px] lg:w-[540px] max-h-[calc(100dvh-var(--safe-top)-var(--safe-bottom)-32px)] h-fit flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
+        className={`absolute z-10 safe-right-pos safe-bottom-pos safe-width-mobile md:w-[500px] lg:w-[540px] safe-height-mobile md:safe-height-desktop flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
           !isAnalyticsCollapsed 
             ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' 
             : 'opacity-0 scale-95 translate-y-4 pointer-events-none'

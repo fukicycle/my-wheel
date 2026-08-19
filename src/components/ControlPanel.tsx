@@ -51,7 +51,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
       className={`w-full relative flex flex-col justify-between transition-all duration-500 ease-in-out select-none border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/80 rounded-2xl ${
         isCollapsed 
           ? 'h-full max-h-full md:h-full' 
-          : 'h-fit max-h-full md:h-full'
+          : 'h-full max-h-full md:h-full'
       }`}
     >
       {/* ──────────────────────────────────────────────────────────────── */}
@@ -150,7 +150,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
         <div 
           className={`flex flex-col justify-between gap-4 overflow-y-auto w-full p-4 md:p-6 transition-all duration-500 ease-in-out ${
             !isCollapsed 
-              ? 'relative h-fit max-h-full md:h-full opacity-100 scale-100 pointer-events-auto' 
+              ? 'relative h-full max-h-full md:h-full opacity-100 scale-100 pointer-events-auto' 
               : 'absolute inset-0 h-full opacity-0 scale-95 pointer-events-none'
           }`}
         >
