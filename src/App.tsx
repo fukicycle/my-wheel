@@ -40,12 +40,14 @@ function App() {
       
       {/* 100% IMMERSIVE FULL-SCREEN 3D CANVAS BACKGROUND */}
       <div className="absolute inset-0 w-full h-full z-0">
-        <WheelScene activeTab={activeTab} />
+        <WheelScene />
       </div>
 
       {/* 📐 FLOATING CAD DIMENSIONS TOGGLE (Permanently visible outside panels) */}
       <div 
-        className="absolute z-20 right-[calc(1rem+env(safe-area-inset-right,0px))] top-[calc(1rem+env(safe-area-inset-top,0px))] flex items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800"
+        className={`absolute z-20 right-[calc(1rem+env(safe-area-inset-right,0px))] top-[calc(1rem+env(safe-area-inset-top,0px))] items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800
+          ${isCollapsed ? 'flex' : 'hidden md:flex'}
+        `}
       >
         <span className="flex items-center gap-1.5 font-sans tracking-wide">
           <Ruler size={13} className="text-cyan-400" />

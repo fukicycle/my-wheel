@@ -11,7 +11,8 @@ import {
   User, 
   Disc, 
   Maximize2,
-  Circle
+  Circle,
+  Ruler
 } from 'lucide-react';
 
 interface ControlPanelProps {
@@ -351,6 +352,23 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
             {/* ──────────────────────────────────────────────────────── */}
             {activeTab === 'hub' && (
               <div className="flex flex-col gap-4 md:gap-5 animate-fadeIn text-slate-100">
+                {/* CAD寸法線表示切り替え */}
+                <div className="flex items-center justify-between bg-slate-950/30 p-3.5 rounded-xl border border-slate-900 shadow-inner">
+                  <span className="text-xs md:text-sm text-slate-300 flex items-center gap-1.5 font-medium">
+                    <Ruler size={13} className="text-cyan-400" />
+                    CAD寸法線を表示
+                  </span>
+                  <label className="relative flex items-center cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={input.showDimensions}
+                      onChange={() => updateInput('showDimensions', !input.showDimensions)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-900 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500 peer-checked:after:bg-slate-950"></div>
+                  </label>
+                </div>
+
                 {/* Hub配置区分 (前後切り替え) */}
                 <div className="flex flex-col gap-1.5 bg-slate-950/30 p-3.5 rounded-xl border border-slate-900 shadow-inner">
                   <span className="text-xs text-slate-300">ハブ配置区分 (前後切り替え)</span>

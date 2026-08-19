@@ -5,12 +5,8 @@ import * as THREE from 'three';
 import { useWheelStore } from '../store/useWheelStore';
 import { RIM_PRESETS } from '../lib/physicsEngine';
 
-interface WheelModelProps {
-  activeTab: 'rider' | 'rim' | 'hub' | 'spoking';
-}
-
 // Inside Canvas component to access useFrame
-const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
+const WheelModel: React.FC = () => {
   const { input, output } = useWheelStore();
   const rimPreset = RIM_PRESETS[input.rimPresetId];
 
@@ -309,7 +305,7 @@ const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
       {/* ──────────────────────────────────────────────────────────────── */}
       {/* CAD DIMENSION OVERLAYS & BLUEPRINT HELPER LINES */}
       {/* ──────────────────────────────────────────────────────────────── */}
-      {activeTab === 'hub' && input.showDimensions && (
+      {input.showDimensions && (
         <group>
           {/* Centerline vertical dashed plane helper */}
           <Line
@@ -345,11 +341,11 @@ const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
           {/* Dimension Line: NDS Center-to-Flange */}
           <Line
             points={[new THREE.Vector3(0, -0.08, 0), new THREE.Vector3(0, -0.08, -ndsOffset)]}
-            color="#1e293b"
+            color="#64748b"
             lineWidth={2}
           />
           {/* Small tick mark on Left */}
-          <Line points={[new THREE.Vector3(0, -0.076, -ndsOffset), new THREE.Vector3(0, -0.084, -ndsOffset)]} color="#1e293b" lineWidth={2} />
+          <Line points={[new THREE.Vector3(0, -0.076, -ndsOffset), new THREE.Vector3(0, -0.084, -ndsOffset)]} color="#64748b" lineWidth={2} />
           <Html position={[0.025, -0.09, -ndsOffset / 2]} center distanceFactor={1.2}>
             <div className="px-1.5 py-0.5 bg-slate-950/65 border border-slate-800/80 backdrop-blur-sm text-[9px] font-mono font-bold text-cyan-400 rounded shadow-lg select-none whitespace-nowrap pointer-events-none">
               L_Offset: {input.ndsOffsetMm}mm
@@ -359,11 +355,11 @@ const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
           {/* Dimension Line: DS Center-to-Flange */}
           <Line
             points={[new THREE.Vector3(0, -0.08, 0), new THREE.Vector3(0, -0.08, dsOffset)]}
-            color="#1e293b"
+            color="#64748b"
             lineWidth={2}
           />
           {/* Small tick mark on Right */}
-          <Line points={[new THREE.Vector3(0, -0.076, dsOffset), new THREE.Vector3(0, -0.084, dsOffset)]} color="#1e293b" lineWidth={2} />
+          <Line points={[new THREE.Vector3(0, -0.076, dsOffset), new THREE.Vector3(0, -0.084, dsOffset)]} color="#64748b" lineWidth={2} />
           <Html position={[0.025, -0.09, dsOffset / 2]} center distanceFactor={1.2}>
             <div className="px-1.5 py-0.5 bg-slate-950/65 border border-slate-800/80 backdrop-blur-sm text-[9px] font-mono font-bold text-cyan-400 rounded shadow-lg select-none whitespace-nowrap pointer-events-none">
               R_Offset: {input.dsOffsetMm}mm
@@ -376,7 +372,7 @@ const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
           {/* NDS PCD Leader Line & Label */}
           <Line
             points={[new THREE.Vector3(0, ndsFlangeRadius, -ndsOffset), new THREE.Vector3(0, ndsFlangeRadius + 0.04, -ndsOffset)]}
-            color="#1e293b"
+            color="#64748b"
             lineWidth={1.2}
           />
           <Line
@@ -399,7 +395,7 @@ const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
           {/* DS PCD Leader Line & Label */}
           <Line
             points={[new THREE.Vector3(0, dsFlangeRadius, dsOffset), new THREE.Vector3(0, dsFlangeRadius + 0.04, dsOffset)]}
-            color="#1e293b"
+            color="#64748b"
             lineWidth={1.2}
           />
           <Line
@@ -630,11 +626,7 @@ const WheelModel: React.FC<WheelModelProps> = ({ activeTab }) => {
   );
 };
 
-interface WheelSceneProps {
-  activeTab: 'rider' | 'rim' | 'hub' | 'spoking';
-}
-
-export const WheelScene: React.FC<WheelSceneProps> = ({ activeTab }) => {
+export const WheelScene: React.FC = () => {
   return (
     <div className="w-full h-full relative overflow-hidden">
       {/* 3D Canvas with Angled Camera Position for immediate 3D depth and soft studio background */}
@@ -642,7 +634,7 @@ export const WheelScene: React.FC<WheelSceneProps> = ({ activeTab }) => {
         camera={{ position: [0.38, 0.18, 0.72], fov: 45 }}
         gl={{ antialias: true }}
       >
-        <color attach="background" args={['#e2e8f0']} /> {/* Clean bright slate-gray background */}
+        <color attach="background" args={['#0a1120']} /> {/* Clean deep studio-dark background */}
         
         {/* Lights */}
         <ambientLight intensity={0.6} />
@@ -651,7 +643,7 @@ export const WheelScene: React.FC<WheelSceneProps> = ({ activeTab }) => {
         <directionalLight position={[-4, -2, -4]} intensity={0.6} />
 
         {/* Dynamic Wheel Model */}
-        <WheelModel activeTab={activeTab} />
+        <WheelModel />
 
         {/* Orbit Controls with absolute 360° spherical rotation */}
         <OrbitControls 
@@ -664,17 +656,17 @@ export const WheelScene: React.FC<WheelSceneProps> = ({ activeTab }) => {
           maxPolarAngle={Math.PI}
         />
 
-        {/* Sleek Dark Grid Helper for high visibility contrast on bright background */}
+        {/* Sleek Subtle Grid Helper for high visibility contrast on dark background */}
         <group position={[0, -0.34, 0]}>
           <Grid 
             position={[0, 0, 0]} 
             args={[3, 3]} 
             cellSize={0.1} 
             cellThickness={0.5} 
-            cellColor="#cbd5e1" 
+            cellColor="#1e293b" 
             sectionSize={0.5} 
             sectionThickness={1.2} 
-            sectionColor="#94a3b8" 
+            sectionColor="#334155" 
             fadeDistance={1.5}
             infiniteGrid
           />
