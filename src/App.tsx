@@ -1,125 +1,127 @@
-import { useState, useEffect } from 'react';
-import { ControlPanel } from './components/ControlPanel';
-import { WheelScene } from './components/WheelScene';
-import { AnalyticsPanel } from './components/AnalyticsPanel';
-import { BarChart2, Ruler } from 'lucide-react';
-import { useWheelStore } from './store/useWheelStore';
+import { Bookmark, Check, Link2, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { SavedBuilds } from './components/SavedBuilds';
+import { WheelPanel } from './components/WheelPanel';
+import { calculateWheel } from './lib/calc';
+import { decodeBuild, encodeBuild, useBuildStore } from './store/useBuildStore';
 
 function App() {
-  const { input, updateInput } = useWheelStore();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isAnalyticsCollapsed, setIsAnalyticsCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'rider' | 'rim' | 'hub' | 'spoking'>('rider');
+  const { build, setName, saveCurrent, reset, replaceBuild } = useBuildStore();
+  const [mobileView, setMobileView] = useState<'front' | 'rear'>('front');
+  const [flash, setFlash] = useState<'saved' | 'copied' | null>(null);
 
-  // Automatically collapse both drawers by default on mobile devices
+  // 共有リンク（#b=...）から開いたときはそのビルドを読み込む
   useEffect(() => {
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      setIsCollapsed(true);
-      setIsAnalyticsCollapsed(true);
-    }
-  }, []);
+    const match = window.location.hash.match(/^#b=(.+)$/);
+    if (!match) return;
+    const shared = decodeBuild(match[1]);
+    if (shared) replaceBuild(shared);
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  }, [replaceBuild]);
 
-  // Coordinated collapsing on mobile to prevent overlapping sheets
-  const handleToggleControl = (collapsed: boolean) => {
-    setIsCollapsed(collapsed);
-    if (!collapsed && window.innerWidth < 768) {
-      setIsAnalyticsCollapsed(true); // Auto-collapse analytics if control is opened
-    }
-  };
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setFlash(null), 1800);
+    return () => clearTimeout(t);
+  }, [flash]);
 
-  const handleToggleAnalytics = (collapsed: boolean) => {
-    setIsAnalyticsCollapsed(collapsed);
-    if (!collapsed && window.innerWidth < 768) {
-      setIsCollapsed(true); // Auto-collapse control if analytics is opened
+  const front = calculateWheel(build.front).mass.total;
+  const rear = calculateWheel(build.rear).mass.total;
+
+  const copyLink = async () => {
+    const url = `${window.location.origin}${window.location.pathname}#b=${encodeBuild(build)}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      window.prompt('このリンクをコピーしてください', url);
     }
+    setFlash('copied');
   };
 
   return (
-    <div className="relative w-screen h-dvh overflow-hidden bg-slate-950 text-slate-100 font-sans select-none flex">
-      
-      {/* 100% IMMERSIVE FULL-SCREEN 3D CANVAS BACKGROUND */}
-      <div className="absolute inset-0 w-full h-full z-0">
-        <WheelScene />
+    <div className="mx-auto max-w-[1280px] px-4 pb-16 sm:px-6 lg:px-8">
+      <header className="z-10 md:sticky md:top-0 -mx-4 border-b border-rule bg-bg px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <label className="min-w-0 flex-1 basis-64">
+            <span className="sr-only">ビルド名</span>
+            <input
+              value={build.name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full truncate rounded-md border border-transparent bg-transparent px-1 py-0.5 text-lg font-semibold hover:border-rule focus:border-[var(--focus)] focus:outline-none"
+            />
+          </label>
+          <p className="num m-0 flex items-baseline gap-4 text-sm text-muted">
+            <span>
+              前 <span className="text-ink">{front.toFixed(0)}</span>
+            </span>
+            <span>
+              後 <span className="text-ink">{rear.toFixed(0)}</span>
+            </span>
+            <span>
+              前後 <span className="text-2xl font-semibold text-ink">{(front + rear).toFixed(0)}</span> g
+            </span>
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                saveCurrent();
+                setFlash('saved');
+              }}
+            >
+              {flash === 'saved' ? <Check size={15} aria-hidden /> : <Bookmark size={15} aria-hidden />}
+              {flash === 'saved' ? '保存しました' : '保存'}
+            </button>
+            <button type="button" className="btn" onClick={copyLink}>
+              {flash === 'copied' ? <Check size={15} aria-hidden /> : <Link2 size={15} aria-hidden />}
+              {flash === 'copied' ? 'コピーしました' : 'リンクをコピー'}
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                if (window.confirm('編集中のビルドを初期値に戻します。保存したビルドは残ります。')) reset();
+              }}
+              aria-label="初期値に戻す"
+              title="初期値に戻す"
+            >
+              <RotateCcw size={15} aria-hidden />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="mt-4 flex rounded-lg border border-rule bg-surface p-1 lg:hidden" role="tablist" aria-label="表示するホイール">
+        {(['front', 'rear'] as const).map((p) => (
+          <button
+            key={p}
+            type="button"
+            role="tab"
+            aria-selected={mobileView === p}
+            onClick={() => setMobileView(p)}
+            className={`flex-1 rounded-md py-1.5 text-sm font-medium ${mobileView === p ? 'bg-ink text-surface' : 'text-muted'}`}
+          >
+            {p === 'front' ? '前輪' : '後輪'}
+          </button>
+        ))}
       </div>
 
-      {/* 📐 FLOATING CAD DIMENSIONS TOGGLE (Permanently visible outside panels) */}
-      <div 
-        className={`absolute z-10 safe-right-pos safe-top-pos items-center gap-2.5 px-3 py-2 rounded-xl border border-slate-900 shadow-2xl backdrop-blur-md bg-slate-950/65 select-none text-xs text-slate-300 font-medium transition-all duration-350 hover:bg-slate-950/80 hover:border-slate-800
-          ${isCollapsed ? 'flex' : 'hidden md:flex'}
-        `}
-      >
-        <span className="flex items-center gap-1.5 font-sans tracking-wide">
-          <Ruler size={13} className="text-cyan-400" />
-          <span className="hidden sm:inline">CAD寸法線を表示</span>
-          <span className="sm:hidden">CAD寸法</span>
-        </span>
-        <button
-          onClick={() => updateInput('showDimensions', !input.showDimensions)}
-          className={`relative inline-flex items-center w-9 h-5 rounded-full p-0.5 transition-colors duration-300 focus:outline-none ${
-            input.showDimensions ? 'bg-cyan-500' : 'bg-slate-900'
-          }`}
-          title="寸法線表示切り替え"
-        >
-          <span 
-            className={`w-4 h-4 rounded-full shadow-md transition-transform duration-300 ${
-              input.showDimensions 
-                ? 'translate-x-4 bg-slate-950' 
-                : 'translate-x-0 bg-slate-400'
-            }`}
-          />
-        </button>
-      </div>
+      <main className="mt-6 grid gap-8 lg:grid-cols-2">
+        <div className={mobileView === 'front' ? '' : 'hidden lg:block'}>
+          <WheelPanel position="front" />
+        </div>
+        <div className={mobileView === 'rear' ? '' : 'hidden lg:block'}>
+          <WheelPanel position="rear" />
+        </div>
+      </main>
 
-      {/* ──────────────────────────────────────────────────────────────── */}
-      {/* CONTROL PANEL WIDGET (Left-anchored Figma-Style Sliding Dock Panel) */}
-      {/* ──────────────────────────────────────────────────────────────── */}
-      <div 
-        className={`absolute z-20 transition-all duration-500 ease-in-out flex flex-col overflow-hidden
-          safe-left-pos
-          safe-top-pos
-          ${isCollapsed 
-            ? 'w-[52px] h-[52px] max-h-[52px] md:safe-height-desktop md:max-h-none md:w-[64px]' 
-            : 'safe-width-mobile safe-height-mobile md:w-[350px] lg:w-[390px] md:safe-height-desktop md:max-h-none'
-          }
-        `}
-      >
-        <ControlPanel 
-          isCollapsed={isCollapsed} 
-          onToggleCollapse={handleToggleControl} 
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-        />
-      </div>
+      <SavedBuilds />
 
-      {/* ──────────────────────────────────────────────────────────────── */}
-      {/* ANALYTICS PANEL WIDGET (Bottom-Right Decoupled Glassmorphic Panel) */}
-      {/* ──────────────────────────────────────────────────────────────── */}
-
-      {/* A. Collapsed State: Symmetrical circular button trigger (Always rendered for smooth transitions!) */}
-      <button
-        onClick={() => handleToggleAnalytics(false)}
-        className={`absolute z-20 safe-right-pos safe-bottom-pos w-[52px] h-[52px] rounded-2xl flex items-center justify-center bg-slate-950/80 border border-slate-900 shadow-2xl backdrop-blur-md text-cyan-400 hover:text-cyan-300 transition-all duration-500 ease-in-out hover:scale-105 active:scale-95 ${
-          isAnalyticsCollapsed 
-            ? 'opacity-100 scale-100 pointer-events-auto' 
-            : 'opacity-0 scale-50 pointer-events-none'
-        }`}
-        title="テレメトリ解析を開く"
-      >
-        <BarChart2 size={20} className="animate-pulse" />
-      </button>
-
-      {/* B. Expanded State: Right-bottom anchored floating card, height fits content (Math.min) with parent overflow limit */}
-      <div 
-        className={`absolute z-20 safe-right-pos safe-bottom-pos safe-width-mobile md:w-[500px] lg:w-[540px] safe-height-mobile md:safe-height-desktop flex flex-col overflow-hidden transition-all duration-500 ease-in-out ${
-          !isAnalyticsCollapsed 
-            ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' 
-            : 'opacity-0 scale-95 translate-y-4 pointer-events-none'
-        }`}
-      >
-        <AnalyticsPanel isCollapsed={isAnalyticsCollapsed} onToggleCollapse={handleToggleAnalytics} />
-      </div>
-
+      <footer className="mt-12 border-t border-rule pt-4 text-xs leading-relaxed text-muted">
+        スポーク長は DT SWISS と同じ方式（ERD・PCD・フランジ距離・クロス数から幾何長を求め、ハブ穴径の半分を差し引く）で計算しています。
+        張力はリム上の横方向の釣り合いから求めた理論値で、スポーク重量とニップル重量は概算です。入力内容はこのブラウザに保存されます。
+      </footer>
     </div>
   );
 }
