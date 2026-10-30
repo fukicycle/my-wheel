@@ -1,10 +1,11 @@
 import { AlertTriangle, Info, OctagonAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { calculateWheel, type Finding, type SideResult, type WheelResult } from '../domain/engine';
+import { calculateWheel, useEngine, type Finding, type SideResult, type WheelResult } from '../domain/engine';
 import { HUB_PRESETS, NIPPLES, RIM_PRESETS, SPOKES } from '../lib/parts';
 import type { HubSpec, Lacing, RimSpec, Side, SideSpec, WheelBuild } from '../lib/types';
 import { hubFromPreset, rimFromPreset, useBuildStore } from '../store/useBuildStore';
 import { DishDiagram } from './DishDiagram';
+import { EnginePending } from './EnginePending';
 import { Group, NumberField, SelectField } from './fields';
 import { LacingDiagram } from './LacingDiagram';
 
@@ -22,7 +23,8 @@ export function sideLabel(build: WheelBuild, side: Side): string {
 export function WheelPanel({ position }: { position: 'front' | 'rear' }) {
   const build = useBuildStore((s) => s.build[position]);
   const updateWheel = useBuildStore((s) => s.updateWheel);
-  const result = calculateWheel(build);
+  const engine = useEngine();
+  const result = engine.status === 'ready' ? calculateWheel(build) : null;
   const update = (patch: Partial<WheelBuild>) => updateWheel(position, patch);
 
   return (
@@ -35,21 +37,40 @@ export function WheelPanel({ position }: { position: 'front' | 'rear' }) {
           </span>
         </h2>
         <p className="m-0 text-right">
-          <span className="num text-2xl font-semibold">{result.mass.total.toFixed(0)}</span>
+          <span className="num text-2xl font-semibold">{result ? result.mass.total.toFixed(0) : '—'}</span>
           <span className="ml-0.5 text-sm text-muted">g</span>
         </p>
       </header>
 
       <div className="rounded-xl border border-rule bg-surface p-4 sm:p-5">
-        <DishDiagram build={build} result={result} />
-        <ResultTable build={build} result={result} />
-        <Findings findings={result.findings} />
+        {result ? (
+          <>
+            <DishDiagram build={build} result={result} />
+            <ResultTable build={build} result={result} />
+            <Findings findings={result.findings} />
+          </>
+        ) : (
+          // 読み込み後に下の入力欄がずれないよう、断面図（400:270）と表のぶんの高さを先に確保する
+          <>
+            <EnginePending engine={engine} className="aspect-[400/270]" />
+            <div className="h-[540px]" aria-hidden />
+          </>
+        )}
       </div>
 
       <div className="mt-4 rounded-xl border border-rule bg-surface p-4 sm:p-5">
         <h3 className="m-0 mb-3 text-sm font-semibold">組み図</h3>
-        <LacingDiagram build={build} result={result} />
-        <Breakdown result={result} />
+        {result ? (
+          <>
+            <LacingDiagram build={build} result={result} />
+            <Breakdown result={result} />
+          </>
+        ) : (
+          <div aria-hidden>
+            <div className="aspect-[5/4]" />
+            <div className="h-[130px]" />
+          </div>
+        )}
       </div>
 
       <div className="mt-4 space-y-4 rounded-xl border border-rule bg-surface p-4 sm:p-5">
@@ -205,10 +226,10 @@ interface UpdateProps {
   update: (patch: Partial<WheelBuild>) => void;
 }
 
-function SpokeInputs({ build, result, update }: UpdateProps & { result: WheelResult }) {
+function SpokeInputs({ build, result, update }: UpdateProps & { result: WheelResult | null }) {
   const setSide = (side: Side, patch: Partial<SideSpec>) => update({ [side]: { ...build[side], ...patch } });
   const column = (side: Side) => {
-    const r = result[side];
+    const maxCross = result?.[side].maxCross ?? Infinity;
     return (
       <div className={`space-y-2.5 rounded-lg p-3 ${side === 'left' ? 'bg-side-l-soft' : 'bg-side-r-soft'}`}>
         <p className={`m-0 text-sm font-semibold ${side === 'left' ? 'text-side-l' : 'text-side-r'}`}>
@@ -233,7 +254,7 @@ function SpokeInputs({ build, result, update }: UpdateProps & { result: WheelRes
           onChange={(v) => setSide(side, { cross: Number(v) })}
           options={[0, 1, 2, 3, 4].map((c) => ({
             value: String(c),
-            label: `${c === 0 ? 'ラジアル（0）' : `${c}クロス`}${c > r.maxCross ? '　接線超え' : ''}`,
+            label: `${c === 0 ? 'ラジアル（0）' : `${c}クロス`}${c > maxCross ? '　接線超え' : ''}`,
           }))}
         />
       </div>

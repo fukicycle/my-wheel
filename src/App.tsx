@@ -2,7 +2,7 @@ import { Bookmark, Check, Link2, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SavedBuilds } from './components/SavedBuilds';
 import { WheelPanel } from './components/WheelPanel';
-import { calculateWheels, engineStats } from './domain/engine';
+import { calculateWheels, useEngine } from './domain/engine';
 import { decodeBuild, encodeBuild, useBuildStore } from './store/useBuildStore';
 
 function App() {
@@ -25,7 +25,11 @@ function App() {
     return () => clearTimeout(t);
   }, [flash]);
 
-  const [front, rear] = calculateWheels([build.front, build.rear]).map((r) => r.mass.total);
+  const engine = useEngine();
+  const results = engine.status === 'ready' ? calculateWheels([build.front, build.rear]) : null;
+  const grams = (v: number | undefined) => (v === undefined ? '—' : v.toFixed(0));
+  const front = results?.[0].mass.total;
+  const rear = results?.[1].mass.total;
 
   const copyLink = async () => {
     const url = `${window.location.origin}${window.location.pathname}#b=${encodeBuild(build)}`;
@@ -51,13 +55,13 @@ function App() {
           </label>
           <p className="num m-0 flex items-baseline gap-4 text-sm text-muted">
             <span>
-              前 <span className="text-ink">{front.toFixed(0)}</span>
+              前 <span className="text-ink">{grams(front)}</span>
             </span>
             <span>
-              後 <span className="text-ink">{rear.toFixed(0)}</span>
+              後 <span className="text-ink">{grams(rear)}</span>
             </span>
             <span>
-              前後 <span className="text-2xl font-semibold text-ink">{(front + rear).toFixed(0)}</span> g
+              前後 <span className="text-2xl font-semibold text-ink">{grams(front === undefined || rear === undefined ? undefined : front + rear)}</span> g
             </span>
           </p>
           <div className="flex gap-2">
@@ -122,7 +126,7 @@ function App() {
         張力はリム上の横方向の釣り合いから求めた理論値で、スポーク重量とニップル重量は概算です。入力内容はこのブラウザに保存されます。
         <span className="mt-1 block">
           計算エンジン：C#（WebAssembly）
-          {engineStats() && <span className="num">・起動 {engineStats()!.bootMs.toFixed(0)}ms</span>}
+          {engine.status === 'ready' && <span className="num">・起動 {engine.bootMs.toFixed(0)}ms</span>}
         </span>
       </footer>
     </div>

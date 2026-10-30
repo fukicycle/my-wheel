@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from 'react';
 import { findNipple, findSpoke } from '../lib/parts';
 import type { WheelBuild } from '../lib/types';
 import { wheelResultsSchema, type CalculateRequest, type WheelResult } from './contract';
@@ -7,32 +8,57 @@ interface WasmExports {
   MyWheel: { Wasm: { WheelInterop: { CalculateMany(requestsJson: string): string } } };
 }
 
-/** 起動にかかった時間などの計測値。メリット・デメリットの検証用に画面のフッターに出す */
-export interface EngineStats {
-  bootMs: number;
-}
+export type EngineState =
+  | { status: 'loading'; loaded: number; total: number }
+  | { status: 'ready'; bootMs: number }
+  | { status: 'error' };
 
+/** エンジン（.NET ランタイム）の置き場所。ビルドごとにハッシュ付きディレクトリが変わる */
+export const ENGINE_BASE = `${import.meta.env.BASE_URL}dotnet/${__ENGINE_DIR__}/`;
+
+let state: EngineState = { status: 'loading', loaded: 0, total: 0 };
 let calculateMany: ((json: string) => string) | null = null;
-let stats: EngineStats | null = null;
+let started: Promise<void> | null = null;
+const listeners = new Set<() => void>();
+
+function setState(next: EngineState) {
+  state = next;
+  listeners.forEach((l) => l());
+}
 
 /**
- * .NET ランタイムを読み込む。計算は同期で呼びたいので、描画の前に一度だけ await する。
+ * .NET ランタイムを読み込む。画面は待たずに描画し、読み込み状態は useEngine() で購読する。
  * dotnet.js は Vite の public/dotnet/ に置いた静的ファイルで、バンドルには含めない。
  */
-export async function initEngine(): Promise<EngineStats> {
-  if (stats) return stats;
-  const started = performance.now();
-  const url = `${import.meta.env.BASE_URL}dotnet/dotnet.js`;
-  const { dotnet } = await import(/* @vite-ignore */ url);
-  const runtime = await dotnet.create();
-  const exports: WasmExports = await runtime.getAssemblyExports(runtime.getConfig().mainAssemblyName);
-  calculateMany = exports.MyWheel.Wasm.WheelInterop.CalculateMany;
-  stats = { bootMs: performance.now() - started };
-  return stats;
+export function startEngine(): Promise<void> {
+  started ??= (async () => {
+    const t0 = performance.now();
+    try {
+      const { dotnet } = await import(/* @vite-ignore */ `${ENGINE_BASE}dotnet.js`);
+      const runtime = await dotnet
+        .withModuleConfig({
+          onDownloadResourceProgress: (loaded: number, total: number) => setState({ status: 'loading', loaded, total }),
+        })
+        .create();
+      const exports: WasmExports = await runtime.getAssemblyExports(runtime.getConfig().mainAssemblyName);
+      calculateMany = exports.MyWheel.Wasm.WheelInterop.CalculateMany;
+      setState({ status: 'ready', bootMs: performance.now() - t0 });
+    } catch (error) {
+      console.error(error);
+      setState({ status: 'error' });
+    }
+  })();
+  return started;
 }
 
-export function engineStats(): EngineStats | null {
-  return stats;
+export function useEngine(): EngineState {
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    () => state,
+  );
 }
 
 function toRequest(wheel: WheelBuild): CalculateRequest {
@@ -45,15 +71,18 @@ function toRequest(wheel: WheelBuild): CalculateRequest {
   };
 }
 
-/** 複数のホイールをまとめて計算する。境界をまたぐのは1回だけ */
-export function calculateWheels(wheels: WheelBuild[]): WheelResult[] {
-  if (!calculateMany) throw new Error('計算エンジンが未初期化です。initEngine() を先に呼んでください');
+/**
+ * 複数のホイールをまとめて計算する。境界をまたぐのは1回だけ。
+ * エンジンの準備ができていなければ null（呼び出し側は useEngine() で再描画される）
+ */
+export function calculateWheels(wheels: WheelBuild[]): WheelResult[] | null {
+  if (!calculateMany) return null;
   const raw = calculateMany(JSON.stringify(wheels.map(toRequest)));
   return wheelResultsSchema.parse(JSON.parse(raw));
 }
 
-export function calculateWheel(wheel: WheelBuild): WheelResult {
-  return calculateWheels([wheel])[0];
+export function calculateWheel(wheel: WheelBuild): WheelResult | null {
+  return calculateWheels([wheel])?.[0] ?? null;
 }
 
 export type { Finding, SideResult, WheelResult } from './contract';

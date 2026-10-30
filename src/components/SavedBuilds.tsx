@@ -1,10 +1,9 @@
 import { Trash2, Upload } from 'lucide-react';
-import { calculateWheels } from '../domain/engine';
+import { calculateWheels, useEngine, type WheelResult } from '../domain/engine';
 import type { Build } from '../lib/types';
 import { useBuildStore } from '../store/useBuildStore';
 
-function summarize(build: Build) {
-  const [f, r] = calculateWheels([build.front, build.rear]);
+function summarize([f, r]: WheelResult[]) {
   return {
     front: f.mass.total,
     rear: r.mass.total,
@@ -17,11 +16,18 @@ function summarize(build: Build) {
   };
 }
 
+/** エンジンの読み込み中に数値の代わりに出す */
+const PENDING = <span className="text-muted">—</span>;
+
 /** 保存したビルドと編集中のビルドの比較表 */
 export function SavedBuilds() {
   const { build, saved, replaceBuild, removeSaved } = useBuildStore();
   const rows = [{ id: 'current', label: '編集中', build }, ...saved.map((b) => ({ id: b.id, label: b.name, build: b as Build }))];
-  const base = summarize(build);
+  const engine = useEngine();
+  // 編集中＋保存済みのすべてを1回の呼び出しでまとめて計算する
+  const results = engine.status === 'ready' ? calculateWheels(rows.flatMap((r) => [r.build.front, r.build.rear])) : null;
+  const summaries = results ? rows.map((_, i) => summarize(results.slice(i * 2, i * 2 + 2))) : null;
+  const base = summaries?.[0];
 
   return (
     <section aria-labelledby="compare-title" className="mt-12">
@@ -49,8 +55,8 @@ export function SavedBuilds() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => {
-                const s = summarize(row.build);
+              {rows.map((row, i) => {
+                const s = summaries?.[i];
                 const isCurrent = row.id === 'current';
                 const diff = (v: number, b: number, digits = 0) => {
                   if (isCurrent) return null;
@@ -68,17 +74,15 @@ export function SavedBuilds() {
                     <th scope="row" className="px-4 py-3 text-left font-medium">
                       {row.label}
                       {isCurrent && <span className="block text-xs font-normal text-muted">{build.name}</span>}
-                      {s.errors > 0 && <span className="block text-xs font-normal text-bad">組めない箇所 {s.errors}件</span>}
+                      {s && s.errors > 0 && <span className="block text-xs font-normal text-bad">組めない箇所 {s.errors}件</span>}
                     </th>
-                    <td className="num px-3 py-3 text-right">{s.front.toFixed(0)} g{diff(s.front, base.front)}</td>
-                    <td className="num px-3 py-3 text-right">{s.rear.toFixed(0)} g{diff(s.rear, base.rear)}</td>
-                    <td className="num px-3 py-3 text-right font-semibold">{s.set.toFixed(0)} g{diff(s.set, base.set)}</td>
+                    <td className="num px-3 py-3 text-right">{s && base ? <>{s.front.toFixed(0)} g{diff(s.front, base.front)}</> : PENDING}</td>
+                    <td className="num px-3 py-3 text-right">{s && base ? <>{s.rear.toFixed(0)} g{diff(s.rear, base.rear)}</> : PENDING}</td>
+                    <td className="num px-3 py-3 text-right font-semibold">{s && base ? <>{s.set.toFixed(0)} g{diff(s.set, base.set)}</> : PENDING}</td>
                     <td className="num px-3 py-3 text-right">
-                      {(s.frontRatio * 100).toFixed(0)}% / {(s.rearRatio * 100).toFixed(0)}%
+                      {s ? `${(s.frontRatio * 100).toFixed(0)}% / ${(s.rearRatio * 100).toFixed(0)}%` : PENDING}
                     </td>
-                    <td className="num px-3 py-3 text-right">
-                      {s.frontLat.toFixed(0)} / {s.rearLat.toFixed(0)}
-                    </td>
+                    <td className="num px-3 py-3 text-right">{s ? `${s.frontLat.toFixed(0)} / ${s.rearLat.toFixed(0)}` : PENDING}</td>
                     <td className="px-4 py-3 text-right">
                       {!isCurrent && (
                         <span className="inline-flex gap-1.5">

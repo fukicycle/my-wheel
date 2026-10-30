@@ -32,14 +32,36 @@
 - React 18 / TypeScript / Vite
 - 状態管理: Zustand（`persist` でブラウザに保存）
 - スタイル: Tailwind CSS
-- 計算: `src/lib/calc.ts`（UI に依存しない純粋関数）
+- 計算: C#（.NET 10）を WebAssembly にして呼ぶ
+
+### 計算エンジン（C# / WebAssembly）
+
+| 場所 | 役割 |
+| --- | --- |
+| `domain/MyWheel.Domain` | 計算と判定。UI にも JSON にも依存しない純粋関数 |
+| `domain/MyWheel.Domain/Contract` | JS との境界の JSON 契約（ソース生成） |
+| `domain/MyWheel.Domain.Tests` | golden テスト（旧 TypeScript 実装の出力 405 ケースと一致するか）と、壊れた入力を拒否するかの契約テスト |
+| `domain/MyWheel.Wasm` | `[JSExport]` で `CalculateMany`（入力の配列 → 結果の配列）だけを公開 |
+| `src/domain/contract.ts` | 戻り値を検証する zod スキーマ。結果の型はここから導出する |
+| `src/domain/engine.ts` | エンジンの読み込みと呼び出し |
+| `public/sw.js` | エンジンだけをキャッシュする Service Worker（2回目以降の読み込みを速くする） |
+
+画面はエンジンを待たずに表示し、結果欄は読み込みが終わってから出ます。エンジンは `public/dotnet/<中身のハッシュ>/` に置くので、
+同じ URL の中身は変わらず、Service Worker はキャッシュを優先して読みます。新しいビルドを読み込むと古いキャッシュは消えます。
+
+計算を変えるときは C# 側を直し、`npm run test:domain` を通してください。
 
 ## 開発
 
+.NET 10 SDK と WebAssembly のビルドツールが必要です。
+
 ```bash
+dotnet workload install wasm-tools
 npm install
-npm run dev     # http://localhost:5173/my-wheel/
-npm run build   # 型チェック + 本番ビルド（dist/）
+npm run test:domain   # C# の golden / 契約テスト
+npm run dev           # http://localhost:5173/my-wheel/（初回はエンジンもビルド）
+npm run build         # エンジンのビルド + 型チェック + 本番ビルド（dist/）
 ```
 
-`main` への push で GitHub Actions がビルドし、`gh-pages` ブランチに公開します。
+`main` への push で GitHub Actions がテスト・ビルドし、`gh-pages` ブランチに公開します。
+それ以外のブランチはビルド結果を `preview/<ブランチ名>` に置くだけで、公開はしません。
