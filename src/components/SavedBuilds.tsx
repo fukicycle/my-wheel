@@ -1,11 +1,10 @@
 import { Trash2, Upload } from 'lucide-react';
-import { calculateWheel } from '../lib/calc';
+import { calculateWheels } from '../domain/engine';
 import type { Build } from '../lib/types';
 import { useBuildStore } from '../store/useBuildStore';
 
 function summarize(build: Build) {
-  const f = calculateWheel(build.front);
-  const r = calculateWheel(build.rear);
+  const [f, r] = calculateWheels([build.front, build.rear]);
   return {
     front: f.mass.total,
     rear: r.mass.total,

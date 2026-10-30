@@ -1,4 +1,4 @@
-import type { WheelResult } from '../lib/calc';
+import type { WheelResult } from '../domain/engine';
 import type { WheelBuild } from '../lib/types';
 
 const W = 400;

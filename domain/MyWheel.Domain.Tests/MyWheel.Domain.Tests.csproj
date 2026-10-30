@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 外部パッケージなしで動く golden テスト。dotnet run で実行し、不一致があれば終了コード 1 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MyWheel.Domain/MyWheel.Domain.csproj" />
+    <None Include="golden.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

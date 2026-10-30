@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.WebAssembly">
+  <!-- ドメイン層を JS から呼べる形で WebAssembly にする。UI は持たない（Blazor は使わない） -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Vite の public/ にそのまま置くので、ファイル名にハッシュを付けない -->
+    <WasmFingerprintAssets>false</WasmFingerprintAssets>
+    <!-- サイズ削減：例外メッセージをリソースキーにし、タイムゾーンデータを持たない -->
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+    <InvariantTimezone>true</InvariantTimezone>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MyWheel.Domain/MyWheel.Domain.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,6 +1,6 @@
 import { AlertTriangle, Info, OctagonAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { calculateWheel, type Finding, type SideResult, type WheelResult } from '../lib/calc';
+import { calculateWheel, type Finding, type SideResult, type WheelResult } from '../domain/engine';
 import { HUB_PRESETS, NIPPLES, RIM_PRESETS, SPOKES } from '../lib/parts';
 import type { HubSpec, Lacing, RimSpec, Side, SideSpec, WheelBuild } from '../lib/types';
 import { hubFromPreset, rimFromPreset, useBuildStore } from '../store/useBuildStore';

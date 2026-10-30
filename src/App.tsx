@@ -2,7 +2,7 @@ import { Bookmark, Check, Link2, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SavedBuilds } from './components/SavedBuilds';
 import { WheelPanel } from './components/WheelPanel';
-import { calculateWheel } from './lib/calc';
+import { calculateWheels, engineStats } from './domain/engine';
 import { decodeBuild, encodeBuild, useBuildStore } from './store/useBuildStore';
 
 function App() {
@@ -25,8 +25,7 @@ function App() {
     return () => clearTimeout(t);
   }, [flash]);
 
-  const front = calculateWheel(build.front).mass.total;
-  const rear = calculateWheel(build.rear).mass.total;
+  const [front, rear] = calculateWheels([build.front, build.rear]).map((r) => r.mass.total);
 
   const copyLink = async () => {
     const url = `${window.location.origin}${window.location.pathname}#b=${encodeBuild(build)}`;
@@ -121,6 +120,10 @@ function App() {
       <footer className="mt-12 border-t border-rule pt-4 text-xs leading-relaxed text-muted">
         スポーク長は DT SWISS と同じ方式（ERD・PCD・フランジ距離・クロス数から幾何長を求め、ハブ穴径の半分を差し引く）で計算しています。
         張力はリム上の横方向の釣り合いから求めた理論値で、スポーク重量とニップル重量は概算です。入力内容はこのブラウザに保存されます。
+        <span className="mt-1 block">
+          計算エンジン：C#（WebAssembly）
+          {engineStats() && <span className="num">・起動 {engineStats()!.bootMs.toFixed(0)}ms</span>}
+        </span>
       </footer>
     </div>
   );

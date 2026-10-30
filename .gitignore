@@ -50,3 +50,9 @@ dist-ssr/
 .vite
 .nuxt
 .nitro
+
+# .NET / WebAssembly
+domain/**/bin/
+domain/**/obj/
+domain/.publish/
+public/dotnet/

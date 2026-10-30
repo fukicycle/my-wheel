@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sideCounts, type WheelResult } from '../lib/calc';
+import type { WheelResult } from '../domain/engine';
 import type { Side, WheelBuild } from '../lib/types';
 
 interface SpokeLine {
@@ -10,7 +10,7 @@ interface SpokeLine {
 
 function buildSpokes(build: WheelBuild, result: WheelResult): SpokeLine[] {
   const n = build.holes;
-  const counts = sideCounts(n, build.lacing);
+  const counts = { left: result.left.count, right: result.right.count };
   const many: Side | null = counts.left === counts.right ? null : counts.left > counts.right ? 'left' : 'right';
   const seen: Record<Side, number> = { left: 0, right: 0 };
   const lines: SpokeLine[] = [];

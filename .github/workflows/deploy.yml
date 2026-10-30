@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main, master ]
+    branches: ['**']
 
 permissions:
   contents: write
@@ -20,14 +20,50 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install WebAssembly build tools
+        run: dotnet workload install wasm-tools
+
       - name: Install dependencies
         run: npm ci || npm install
+
+      - name: Test domain (golden + contract)
+        run: npm run test:domain
 
       - name: Build project
         run: npm run build
 
+      - name: Report WebAssembly size
+        run: |
+          {
+            echo '### dist/dotnet'
+            echo '| file | raw | gzip | brotli |'
+            echo '| --- | ---: | ---: | ---: |'
+            for f in $(ls dist/dotnet | grep -v -E '\.(gz|br)$'); do
+              p="dist/dotnet/$f"
+              raw=$(stat -c %s "$p")
+              gz=$(gzip -9 -c "$p" | wc -c)
+              br=$( [ -f "$p.br" ] && stat -c %s "$p.br" || echo '-')
+              echo "| $f | $raw | $gz | $br |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
+
+      # main 以外のブランチは公開せず、ビルド結果だけを preview/<branch> に置いて手元で確認する
+      - name: Push build preview
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: preview/${{ github.ref_name }}
