@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices.JavaScript;
+using System.Runtime.Versioning;
 using MyWheel.Domain;
 using MyWheel.Domain.Contract;
 
@@ -8,6 +9,7 @@ namespace MyWheel.Wasm;
 /// JS に公開する唯一の入口。境界をまたぐたびにマーシャリングのコストがかかるので、
 /// 細かい関数を並べず「リクエストの配列 → 結果の配列」を1回で受け渡す。
 /// </summary>
+[SupportedOSPlatform("browser")]
 public static partial class WheelInterop
 {
     [JSExport]
